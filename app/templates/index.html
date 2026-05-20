@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa - Umut Bağı Platformu{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Engelleri <span class="accent-text">Dayanışma</span> İle Aşıyoruz</h1>
+        <p>Umut Bağı, engelli bireylerin eğitim, erişilebilirlik ve günlük yaşam ihtiyaçlarını gönüllü destekçilerle buluşturan, karşılıklı güvene dayalı dijital bir dayanışma köprüsüdür.</p>
+        <div class="hero-actions">
+            <a href="{{ url_for('main.listings_view') }}" class="btn btn-primary"><i class="fa-solid fa-hand-holding-heart"></i> İhtiyaçları Gör</a>
+            <a href="{{ url_for('auth.auth_view') }}" class="btn btn-outline"><i class="fa-solid fa-user-plus"></i> Bize Katıl</a>
+        </div>
+    </div>
+    
+    <div class="hero-visual">
+        <div class="hero-shape"></div>
+        <div class="hero-card">
+            <div class="visual-item">
+                <div class="visual-icon"><i class="fa-solid fa-wheelchair"></i></div>
+                <div class="visual-info">
+                    <h4>İhtiyacını Bildir</h4>
+                    <p>Eğitim, teknoloji veya erişim ihtiyaçlarını hızlıca sisteme gir.</p>
+                </div>
+            </div>
+            <div class="visual-item">
+                <div class="visual-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                <div class="visual-info">
+                    <h4>Eşleşme ve Destek</h4>
+                    <p>Gönüllü donörlerimiz ihtiyacını üstlensin, dayanışma başlasın.</p>
+                </div>
+            </div>
+            <div class="visual-item">
+                <div class="visual-icon"><i class="fa-solid fa-award"></i></div>
+                <div class="visual-info">
+                    <h4>Umutları Yeşert</h4>
+                    <p>Tamamlanan her destekle engelsiz bir dünyaya bir adım daha yaklaş.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Nasıl Çalışır? Bölümü -->
+<section style="background-color: hsl(222, 20%, 11%); padding: 5rem 2rem; border-top: 1px solid var(--border-glass); border-bottom: 1px solid var(--border-glass);">
+    <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+        <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Nasıl <span class="accent-text">Çalışır?</span></h2>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 4rem auto; font-size: 1.1rem;">Umut Bağı platformunu kullanmak oldukça basit ve güvenlidir.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2.5rem; text-align: left;">
+            <!-- Adım 1 -->
+            <div style="background-color: var(--bg-surface); border: 1px solid var(--border-glass); padding: 2.5rem; border-radius: var(--radius-md);">
+                <span style="font-size: 2.5rem; font-weight: 800; color: var(--secondary); font-family: 'Outfit'; display: block; margin-bottom: 1rem;">01.</span>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Kayıt Ol & Rol Seç</h3>
+                <p style="color: var(--text-light); font-size: 0.95rem;">İster engelli rolüyle ihtiyaç sahibi olarak, ister donör rolüyle gönüllü destekçi olarak kaydolun.</p>
+            </div>
+            <!-- Adım 2 -->
+            <div style="background-color: var(--bg-surface); border: 1px solid var(--border-glass); padding: 2.5rem; border-radius: var(--radius-md);">
+                <span style="font-size: 2.5rem; font-weight: 800; color: var(--primary); font-family: 'Outfit'; display: block; margin-bottom: 1rem;">02.</span>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Talep veya Destek Girişi</h3>
+                <p style="color: var(--text-light); font-size: 0.95rem;">Engelli bireyler ihtiyaç ilanlarını açar; donörler ise aktif ilan listesinden destek olmak istedikleri ilanları seçer.</p>
+            </div>
+            <!-- Adım 3 -->
+            <div style="background-color: var(--bg-surface); border: 1px solid var(--border-glass); padding: 2.5rem; border-radius: var(--radius-md);">
+                <span style="font-size: 2.5rem; font-weight: 800; color: var(--secondary); font-family: 'Outfit'; display: block; margin-bottom: 1rem;">03.</span>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Güvenli Eşleşme</h3>
+                <p style="color: var(--text-light); font-size: 0.95rem;">Sistem üzerinde ilan durumu "Eşleşti" olarak güncellenir ve dayanışma doğrudan koordine edilir.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

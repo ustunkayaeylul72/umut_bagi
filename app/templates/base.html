@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Umut Bağı - Engelsiz Dayanışma Platformu{% endblock %}</title>
+    <!-- Google Fonts (Inter & Outfit) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Premium Glassmorphic Navbar -->
+    <header class="navbar-container">
+        <nav class="navbar">
+            <a href="{{ url_for('main.index') }}" class="logo">
+                <i class="fa-solid fa-hands-holding-child brand-icon"></i>
+                <span class="logo-text">Umut <span class="accent-text">Bağı</span></span>
+            </a>
+            
+            <button class="menu-toggle" id="menu-toggle" aria-label="Menüyü Aç/Kapat">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            
+            <ul class="nav-links" id="nav-links">
+                <li><a href="{{ url_for('main.index') }}" class="nav-link"><i class="fa-solid fa-house"></i> Ana Sayfa</a></li>
+                <li><a href="{{ url_for('main.listings_view') }}" class="nav-link"><i class="fa-solid fa-list-check"></i> İlanlar</a></li>
+                <li id="auth-nav-item">
+                    <a href="{{ url_for('auth.auth_view') }}" class="btn btn-primary nav-btn"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</a>
+                </li>
+                <li id="user-nav-item" class="user-profile-menu" style="display: none;">
+                    <div class="user-info">
+                        <i class="fa-solid fa-circle-user profile-icon"></i>
+                        <span id="nav-username">Kullanıcı</span>
+                        <span id="nav-role-badge" class="badge">Rol</span>
+                    </div>
+                    <button onclick="logout()" class="btn btn-outline btn-sm"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</button>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="toast-container" id="toast-container"></div>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Premium Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section brand">
+                <h3>Umut Bağı</h3>
+                <p>Engelsiz dayanışma ağı ile ihtiyaç sahiplerini ve destekçileri bir araya getiren köprü.</p>
+                <div class="social-icons">
+                    <a href="#" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="footer-section links">
+                <h4>Hızlı Bağlantılar</h4>
+                <ul>
+                    <li><a href="{{ url_for('main.index') }}">Ana Sayfa</a></li>
+                    <li><a href="{{ url_for('main.listings_view') }}">İlanlar</a></li>
+                    <li><a href="{{ url_for('auth.auth_view') }}">Katıl / Giriş Yap</a></li>
+                </ul>
+            </div>
+            <div class="footer-section contact">
+                <h4>İletişim</h4>
+                <p><i class="fa-solid fa-envelope"></i> info@umutbagi.org</p>
+                <p><i class="fa-solid fa-location-dot"></i> Türkiye, Hekaton 2026</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Umut Bağı Platformu. Tüm Hakları Saklıdır. | Engelsiz Dayanışma</p>
+        </div>
+    </footer>
+
+    <!-- Custom Client Logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

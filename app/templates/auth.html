@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Katıl - Umut Bağı Platformu{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <!-- Tab Menüsü -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login">Giriş Yap</button>
+            <button class="auth-tab" id="tab-register">Kayıt Ol</button>
+        </div>
+
+        <!-- Giriş Yap Formu -->
+        <form id="form-login" class="auth-form">
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Hoş Geldiniz</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Devam etmek için kayıtlı e-posta adresinizi girin.</p>
+            
+            <div class="form-group">
+                <label for="login-email">E-Posta Adresi</label>
+                <input type="email" id="login-email" placeholder="ornek@email.com" required autocomplete="email">
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fa-solid fa-right-to-bracket"></i> Giriş Yap
+            </button>
+        </form>
+
+        <!-- Kayıt Ol Formu -->
+        <form id="form-register" class="auth-form" style="display: none;">
+            <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Aramıza Katılın</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Hızlıca profilinizi oluşturun ve dayanışmaya başlayın.</p>
+            
+            <div class="form-group">
+                <label for="register-name">Ad Soyad</label>
+                <input type="text" id="register-name" placeholder="Ahmet Yılmaz" required autocomplete="name">
+            </div>
+            
+            <div class="form-group">
+                <label for="register-email">E-Posta Adresi</label>
+                <input type="email" id="register-email" placeholder="ahmet@example.com" required autocomplete="email">
+            </div>
+            
+            <div class="form-group">
+                <label for="register-role">Katılım Rolü</label>
+                <select id="register-role" required>
+                    <option value="" disabled selected>Rol Seçiniz...</option>
+                    <option value="disabled">İhtiyaç Sahibi (Engelli Birey)</option>
+                    <option value="donor">Destekçi / Donör</option>
+                </select>
+            </div>
+            
+            <!-- Rol 'disabled' olduğunda açılacak ek alan -->
+            <div class="form-group" id="disability-group" style="display: none;">
+                <label for="register-disability">Engel Durumu ve İhtiyaç Özeti</label>
+                <textarea id="register-disability" placeholder="Lütfen kendinizden ve genel ihtiyaç alanlarınızdan kısaca bahsedin..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 1rem;">
+                <i class="fa-solid fa-user-plus"></i> Kaydol
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

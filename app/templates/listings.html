@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}İlanlar - Umut Bağı Platformu{% endblock %}
+
+{% block content %}
+<div class="listings-container">
+    <!-- e-Devlet Rapor Doğrulama Bannerı (JS ile kontrol edilecek) -->
+    <div id="verification-banner" style="display: none; background: linear-gradient(135deg, hsl(222, 20%, 15%), hsl(222, 20%, 12%)); border: 1px solid var(--border-glass); border-left: 4px solid var(--warning); padding: 1.5rem 2rem; border-radius: var(--radius-md); margin-bottom: 2.5rem; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <i class="fa-solid fa-shield-halved fa-2xl" style="color: var(--warning);"></i>
+            <div>
+                <h3 style="font-size: 1.2rem; margin-bottom: 0.25rem;">Hesabınız Henüz Doğrulanmadı</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">İhtiyaç ilanı açabilmek için e-Devlet üzerinden aldığınız barkodlu Engelli Sağlık Kurulu Raporu PDF'inizi yüklemeniz gerekmektedir. KVKK gereği T.C. Kimlik numaranız veritabanına asla kaydedilmez.</p>
+            </div>
+        </div>
+        <form id="form-verify-report" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+            <div style="position: relative; overflow: hidden; display: inline-block;">
+                <button type="button" class="btn btn-outline btn-sm"><i class="fa-solid fa-file-pdf"></i> Rapor PDF Seç</button>
+                <input type="file" id="report-file" accept=".pdf" required style="font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer;">
+            </div>
+            <span id="selected-file-name" style="color: var(--text-muted); font-size: 0.9rem;">Dosya seçilmedi</span>
+            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-circle-check"></i> Doğrula</button>
+        </form>
+    </div>
+
+    <!-- İlanlar Başlık ve İlan Ekleme Butonu -->
+    <div class="listings-header">
+        <div>
+            <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Aktif İhtiyaç <span class="accent-text">İlanları</span></h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">Destek bekleyen engelli bireylerin taleplerine göz atın.</p>
+        </div>
+        <button id="btn-new-listing" class="btn btn-primary" style="display: none;">
+            <i class="fa-solid fa-circle-plus"></i> İhtiyaç İlanı Aç
+        </button>
+    </div>
+
+    <!-- Filtreleme ve Arama Çubuğu -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; background-color: var(--bg-surface); padding: 1rem 1.5rem; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
+        <!-- Kategori Butonları -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+            <button onclick="filterListings('all')" class="btn btn-outline btn-sm filter-btn btn-primary" data-category="all">Tümü</button>
+            <button onclick="filterListings('Eğitim')" class="btn btn-outline btn-sm filter-btn" data-category="Eğitim">Eğitim</button>
+            <button onclick="filterListings('Teknoloji')" class="btn btn-outline btn-sm filter-btn" data-category="Teknoloji">Teknoloji</button>
+            <button onclick="filterListings('Erişilebilirlik')" class="btn btn-outline btn-sm filter-btn" data-category="Erişilebilirlik">Erişilebilirlik</button>
+            <button onclick="filterListings('Diğer')" class="btn btn-outline btn-sm filter-btn" data-category="Diğer">Diğer</button>
+        </div>
+        
+        <!-- Arama Kutusu -->
+        <div class="listings-search-bar" style="max-width: 320px; background-color: rgba(0, 0, 0, 0.15);">
+            <i class="fa-solid fa-magnifying-glass" style="margin-left: 1rem; color: var(--text-muted);"></i>
+            <input type="text" id="search-input" placeholder="İlanlarda ara..." oninput="filterBySearch()">
+        </div>
+    </div>
+
+    <!-- İlan Grid Yapısı -->
+    <div class="listings-grid" id="listings-grid">
+        <!-- JS ile dinamik olarak doldurulacaktır -->
+    </div>
+</div>
+
+<!-- Yeni İlan Oluşturma Modalı (Pop-up) -->
+<div class="modal-backdrop" id="new-listing-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 style="font-size: 1.6rem;"><i class="fa-solid fa-hand-holding-hand" style="color: var(--primary);"></i> Yeni İhtiyaç İlanı</h2>
+            <button id="btn-close-modal" class="modal-close" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <form id="form-new-listing">
+            <div class="form-group">
+                <label for="listing-title">İlan Başlığı</label>
+                <input type="text" id="listing-title" placeholder="Örn: Sesli Kitap Desteği Arıyorum" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-category">Kategori</label>
+                <select id="listing-category" required>
+                    <option value="" disabled selected>Kategori Seçiniz...</option>
+                    <option value="Eğitim">Eğitim</option>
+                    <option value="Teknoloji">Teknoloji</option>
+                    <option value="Erişilebilirlik">Erişilebilirlik</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="listing-description">Detaylı Açıklama</label>
+                <textarea id="listing-description" placeholder="Destekçilerin durumunuzu ve ihtiyacınızı net anlaması için lütfen detaylı açıklama yazın..." required></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                <i class="fa-solid fa-share-from-square"></i> İlanı Yayınla
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Arama Çubuğu için JS Helper fonksiyonu -->
+<script>
+    function filterBySearch() {
+        const query = document.getElementById("search-input").value.toLowerCase();
+        const filtered = allListings.filter(l => 
+            l.title.toLowerCase().includes(query) || 
+            l.description.toLowerCase().includes(query) || 
+            l.category.toLowerCase().includes(query) ||
+            l.creator_name.toLowerCase().includes(query)
+        );
+        displayListings(filtered);
+    }
+</script>
+{% endblock %}
