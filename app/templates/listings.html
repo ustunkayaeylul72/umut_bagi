@@ -23,15 +23,26 @@
         </form>
     </div>
 
-    <!-- İlanlar Başlık ve İlan Ekleme Butonu -->
-    <div class="listings-header">
-        <div>
-            <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;">Aktif İhtiyaç <span class="accent-text">İlanları</span></h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">Destek bekleyen engelli bireylerin taleplerine göz atın.</p>
+    <!-- İlanlar Başlık ve İlan Ekleme Butonu (Tailwind Header) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 gap-4">
+        <div class="flex-1">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                Aktif <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">Bağış İlanları</span>
+            </h1>
+            <p class="mt-4 text-lg text-gray-600 max-w-2xl leading-relaxed">
+                Bağışçıların platforma eklediği eşyaları inceleyin. İhtiyacınız olan ürünleri e-Devlet onaylı hesabınızla güvenle talep edebilirsiniz.
+            </p>
         </div>
-        <button id="btn-new-listing" class="btn btn-primary" style="display: none;">
-            <i class="fa-solid fa-circle-plus"></i> İhtiyaç İlanı Aç
-        </button>
+        <div class="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+            <button id="btn-new-listing" style="display: none;" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-2xl shadow-lg shadow-blue-600/30 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-camera text-xl"></i>
+                <span>Eşya Bağışla</span>
+            </button>
+            <button id="btn-new-need" style="display: none;" class="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg shadow-orange-500/30 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-hand-holding-heart text-xl"></i>
+                <span>İhtiyacım Var</span>
+            </button>
+        </div>
     </div>
 
     <!-- Filtreleme ve Arama Çubuğu -->
@@ -58,39 +69,214 @@
     </div>
 </div>
 
-<!-- Yeni İlan Oluşturma Modalı (Pop-up) -->
-<div class="modal-backdrop" id="new-listing-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 style="font-size: 1.6rem;"><i class="fa-solid fa-hand-holding-hand" style="color: var(--primary);"></i> Yeni İhtiyaç İlanı</h2>
-            <button id="btn-close-modal" class="modal-close" aria-label="Kapat"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        
-        <form id="form-new-listing">
-            <div class="form-group">
-                <label for="listing-title">İlan Başlığı</label>
-                <input type="text" id="listing-title" placeholder="Örn: Sesli Kitap Desteği Arıyorum" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="listing-category">Kategori</label>
-                <select id="listing-category" required>
-                    <option value="" disabled selected>Kategori Seçiniz...</option>
-                    <option value="Eğitim">Eğitim</option>
-                    <option value="Teknoloji">Teknoloji</option>
-                    <option value="Erişilebilirlik">Erişilebilirlik</option>
-                    <option value="Diğer">Diğer</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="listing-description">Detaylı Açıklama</label>
-                <textarea id="listing-description" placeholder="Destekçilerin durumunuzu ve ihtiyacınızı net anlaması için lütfen detaylı açıklama yazın..." required></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                <i class="fa-solid fa-share-from-square"></i> İlanı Yayınla
+<!-- Yeni İlan Oluşturma Modalı (Tailwind CSS) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-all" id="new-listing-modal" style="display: none; opacity: 0; pointer-events: none;">
+    <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col transform transition-all m-4 scale-95 opacity-0" id="new-listing-modal-content">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-800">Yeni İlan Ekle</h2>
+            <button type="button" id="btn-close-modal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
             </button>
+        </div>
+
+        <!-- Form -->
+        <form id="form-new-listing" class="p-8 flex flex-col gap-6 overflow-y-auto max-h-[80vh]">
+            
+            <!-- 1) Resim Yükleme Alanı -->
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-semibold text-gray-700">Fotoğraf Yükle</label>
+                
+                <!-- Dosya Yükleme Kutusu -->
+                <div id="image-upload-box" class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-3xl transition-colors cursor-pointer border-gray-300 hover:bg-gray-50 bg-white" onclick="document.getElementById('listing-image').click()">
+                    <div class="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
+                        <i class="fa-solid fa-cloud-arrow-up text-4xl mb-3 text-gray-400"></i>
+                        <p class="mb-2 text-sm text-gray-500 font-medium">Yüklemek için tıklayın veya sürükleyin</p>
+                        <p class="text-xs text-gray-400">PNG, JPG, WEBP (Max. 5MB)</p>
+                    </div>
+                    <input type="file" id="listing-image" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" accept="image/*" capture="environment">
+                </div>
+
+                <!-- Resim Önizleme Kutusu (Başlangıçta Gizli) -->
+                <div id="image-preview-box" class="relative w-full h-48 rounded-3xl overflow-hidden border border-gray-200 group hidden">
+                    <img id="image-preview-img" src="" alt="Önizleme" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button type="button" id="btn-remove-image" class="bg-white/90 text-red-600 hover:text-red-700 px-4 py-2 rounded-xl font-semibold shadow-sm flex items-center gap-2 transform hover:scale-105 transition-all">
+                            <i class="fa-solid fa-trash-can"></i> Resmi Kaldır
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2) Ürün Adı -->
+            <div class="flex flex-col gap-2">
+                <label for="listing-title" class="text-sm font-semibold text-gray-700">İlan Başlığı</label>
+                <input type="text" id="listing-title" placeholder="Örn: Temiz İkinci El Tekerlekli Sandalye" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800" required>
+            </div>
+
+            <!-- 3) Kategori -->
+            <div class="flex flex-col gap-2">
+                <label for="listing-category" class="text-sm font-semibold text-gray-700">Kategori</label>
+                <div class="relative">
+                    <select id="listing-category" class="w-full px-5 py-3.5 appearance-none bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800" required>
+                        <option value="" disabled selected>Kategori Seçiniz</option>
+                        <option value="Eğitim">Eğitim</option>
+                        <option value="Teknoloji">Teknoloji</option>
+                        <option value="Erişilebilirlik">Erişilebilirlik</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-5 pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4) Ürün Detayları -->
+            <div class="flex flex-col gap-2">
+                <label for="listing-description" class="text-sm font-semibold text-gray-700">Detaylı Açıklama</label>
+                <textarea id="listing-description" rows="4" placeholder="Ürünün durumu veya ihtiyacın detayı hakkında bilgi verin..." class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none text-gray-800" required></textarea>
+            </div>
+
+            <!-- Footer Butonları -->
+            <div class="flex items-center gap-4 mt-4 pt-6 border-t border-gray-100">
+                <button type="button" id="btn-cancel-modal" class="flex-1 py-3.5 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors active:scale-95">
+                    İptal
+                </button>
+                <button type="submit" class="flex-[2] py-3.5 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-blue-600/30 active:scale-95 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-image"></i>
+                    İlanı Yayınla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Yeni İhtiyaç Bildirme Modalı (Tailwind CSS) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-all" id="new-need-modal" style="display: none; opacity: 0; pointer-events: none;">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col transform transition-all m-4 scale-95 opacity-0" id="new-need-modal-content">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-800">İhtiyacımı Bildir</h2>
+            <button type="button" id="btn-close-need-modal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="form-new-need" class="p-8 flex flex-col gap-6 overflow-y-auto max-h-[80vh]">
+            
+            <div class="bg-orange-50 border border-orange-100 p-4 rounded-2xl text-orange-800 text-sm flex items-start gap-3">
+                <i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i>
+                <p>Oluşturacağınız bu talep, diğer engelli bireylerin ve bağışçıların görebileceği şekilde yayınlanacaktır. Adınız ve soyadınız sistemden otomatik olarak alınacaktır.</p>
+            </div>
+
+            <!-- Adres: Şehir / İlçe -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-1 flex flex-col gap-2">
+                    <label for="need-city" class="text-sm font-semibold text-gray-700">Şehir</label>
+                    <input type="text" id="need-city" placeholder="Örn: İstanbul" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-800" required>
+                </div>
+                <div class="flex-1 flex flex-col gap-2">
+                    <label for="need-district" class="text-sm font-semibold text-gray-700">İlçe</label>
+                    <input type="text" id="need-district" placeholder="Örn: Kadıköy" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-800" required>
+                </div>
+            </div>
+
+            <!-- Telefon Numarası -->
+            <div class="flex flex-col gap-2">
+                <label for="need-phone" class="text-sm font-semibold text-gray-700">Telefon Numarası</label>
+                <input type="tel" id="need-phone" placeholder="Örn: 05xx xxx xx xx" class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-800" required>
+            </div>
+
+            <!-- Tam Adres -->
+            <div class="flex flex-col gap-2">
+                <label for="need-address" class="text-sm font-semibold text-gray-700">Tam Teslimat Adresi</label>
+                <textarea id="need-address" rows="2" placeholder="Mahalle, Sokak, No, Daire..." class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none text-gray-800" required></textarea>
+            </div>
+
+            <!-- Kategori -->
+            <div class="flex flex-col gap-2">
+                <label for="need-category" class="text-sm font-semibold text-gray-700">İhtiyaç Kategorisi</label>
+                <div class="relative">
+                    <select id="need-category" class="w-full px-5 py-3.5 appearance-none bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all text-gray-800" required>
+                        <option value="" disabled selected>Kategori Seçiniz</option>
+                        <option value="Medikal Cihaz">Medikal Cihaz</option>
+                        <option value="Eğitim">Eğitim & Kırtasiye</option>
+                        <option value="Teknoloji">Teknoloji</option>
+                        <option value="Erişilebilirlik">Tekerlekli Sandalye / Akülü Araç</option>
+                        <option value="Diğer">Diğer İhtiyaçlar</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-5 pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- İhtiyaç Detayı -->
+            <div class="flex flex-col gap-2">
+                <label for="need-description" class="text-sm font-semibold text-gray-700">İhtiyacınızı Anlatın</label>
+                <textarea id="need-description" rows="3" placeholder="Örn: Üniversite eğitimim için sesli ekran okuyucu program lisansına veya ses kayıt cihazına ihtiyacım var..." class="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none text-gray-800" required></textarea>
+            </div>
+
+            <!-- Footer Butonları -->
+            <div class="flex items-center gap-4 mt-2 pt-6 border-t border-gray-100">
+                <button type="button" id="btn-cancel-need-modal" class="flex-1 py-3.5 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors active:scale-95">
+                    İptal
+                </button>
+                <button type="submit" class="flex-[2] py-3.5 px-6 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-orange-500/30 active:scale-95 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Talep Yayınla
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bağış Talep Etme Modalı (Tailwind CSS) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-all" id="claim-modal" style="display: none; opacity: 0; pointer-events: none;">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col transform transition-all m-4 scale-95 opacity-0" id="claim-modal-content">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+            <h2 class="text-2xl font-bold text-gray-800">Bağışı Talep Et</h2>
+            <button type="button" id="btn-close-claim-modal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="form-claim-listing" class="p-8 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
+            <p class="text-sm text-gray-500 mb-2">Bu bağışı teslim alabilmeniz için bağışçının size ulaşabileceği iletişim ve adres bilgilerinizi giriniz. Bu bilgiler sadece ilanı veren bağışçıyla paylaşılacaktır.</p>
+            
+            <input type="hidden" id="claim-listing-id">
+
+            <!-- 1) Ad Soyad -->
+            <div class="flex flex-col gap-2">
+                <label for="claim-name" class="text-sm font-semibold text-gray-700">Ad Soyad</label>
+                <input type="text" id="claim-name" class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800" required>
+            </div>
+
+            <!-- 2) Telefon Numarası -->
+            <div class="flex flex-col gap-2">
+                <label for="claim-phone" class="text-sm font-semibold text-gray-700">Telefon Numarası</label>
+                <input type="tel" id="claim-phone" placeholder="Örn: 05xx xxx xx xx" class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800" required>
+            </div>
+
+            <!-- 3) Tam Adres -->
+            <div class="flex flex-col gap-2">
+                <label for="claim-address" class="text-sm font-semibold text-gray-700">Tam Teslimat Adresi</label>
+                <textarea id="claim-address" rows="3" placeholder="Mahalle, Sokak, No, Daire, İlçe/İl..." class="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none text-gray-800" required></textarea>
+            </div>
+
+            <!-- Footer Butonları -->
+            <div class="flex items-center gap-4 mt-2 pt-6 border-t border-gray-100">
+                <button type="button" id="btn-cancel-claim-modal" class="flex-1 py-3.5 px-6 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl transition-colors active:scale-95">
+                    İptal
+                </button>
+                <button type="submit" class="flex-[2] py-3.5 px-6 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-2xl transition-colors shadow-lg shadow-teal-600/30 active:scale-95 flex justify-center items-center gap-2">
+                    <i class="fa-solid fa-check"></i>
+                    Talebi Onayla
+                </button>
+            </div>
         </form>
     </div>
 </div>

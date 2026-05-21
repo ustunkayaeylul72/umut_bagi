@@ -11,13 +11,15 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Style Sheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
+    <!-- Tailwind CSS (CDN for Hackathon) -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
     <!-- Premium Glassmorphic Navbar -->
     <header class="navbar-container">
         <nav class="navbar">
-            <a href="{{ url_for('main.index') }}" class="logo">
+            <a href="{{ url_for('pages.index') }}" class="logo">
                 <i class="fa-solid fa-hands-holding-child brand-icon"></i>
                 <span class="logo-text">Umut <span class="accent-text">Bağı</span></span>
             </a>
@@ -27,10 +29,10 @@
             </button>
             
             <ul class="nav-links" id="nav-links">
-                <li><a href="{{ url_for('main.index') }}" class="nav-link"><i class="fa-solid fa-house"></i> Ana Sayfa</a></li>
-                <li><a href="{{ url_for('main.listings_view') }}" class="nav-link"><i class="fa-solid fa-list-check"></i> İlanlar</a></li>
+                <li><a href="{{ url_for('pages.index') }}" class="nav-link"><i class="fa-solid fa-house"></i> Ana Sayfa</a></li>
+                <li><a href="{{ url_for('pages.listings_view') }}" class="nav-link"><i class="fa-solid fa-list-check"></i> İlanlar</a></li>
                 <li id="auth-nav-item">
-                    <a href="{{ url_for('auth.auth_view') }}" class="btn btn-primary nav-btn"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</a>
+                    <a href="{{ url_for('pages.auth_view') }}" class="btn btn-primary nav-btn"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</a>
                 </li>
                 <li id="user-nav-item" class="user-profile-menu" style="display: none;">
                     <div class="user-info">
@@ -65,9 +67,9 @@
             <div class="footer-section links">
                 <h4>Hızlı Bağlantılar</h4>
                 <ul>
-                    <li><a href="{{ url_for('main.index') }}">Ana Sayfa</a></li>
-                    <li><a href="{{ url_for('main.listings_view') }}">İlanlar</a></li>
-                    <li><a href="{{ url_for('auth.auth_view') }}">Katıl / Giriş Yap</a></li>
+                    <li><a href="{{ url_for('pages.index') }}">Ana Sayfa</a></li>
+                    <li><a href="{{ url_for('pages.listings_view') }}">İlanlar</a></li>
+                    <li><a href="{{ url_for('pages.auth_view') }}">Katıl / Giriş Yap</a></li>
                 </ul>
             </div>
             <div class="footer-section contact">
@@ -82,6 +84,6 @@
     </footer>
 
     <!-- Custom Client Logic -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=11.0"></script>
 </body>
 </html>

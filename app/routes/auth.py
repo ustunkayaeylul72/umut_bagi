@@ -89,15 +89,29 @@ def verify_report():
     if not user:
         return jsonify({"error": "Kullanıcı bulunamadı."}), 404
         
-    # PDF dosya akışını oku, doğrula ve bilgileri çıkar
-    success, message, percentage, group = extract_and_verify_report(file.stream)
+    # PDF dosya akışını oku, doğrula ve isim eşleşmesi dahil bilgileri çıkar
+    success, message, percentage, group, tc_no, expiry_date = extract_and_verify_report(file.stream, user.name)
     
     if success:
+        import hashlib
+        
+        if not tc_no:
+            return jsonify({"error": "Geçerli bir T.C. Kimlik numarası bulunamadı."}), 400
+            
+        tc_hash = hashlib.sha256(tc_no.encode('utf-8')).hexdigest()
+        
+        # Check if hash already exists for another user
+        existing_user = User.query.filter_by(tc_hash=tc_hash).first()
+        if existing_user and existing_user.id != user.id:
+            return jsonify({"error": "Bu e-Devlet raporu sistemde başka bir hesap tarafından kullanılıyor!"}), 400
+            
         try:
             # Kullanıcı durumunu doğrulanmış olarak güncelle ve engellilik detaylarını kaydet
             user.is_verified = True
             user.disability_percentage = percentage
             user.disability_group = group
+            user.tc_hash = tc_hash
+            user.report_expiry_date = expiry_date
             # Açıklamayı detaylı kılalım
             user.disability_summary = f"%{percentage} {group}"
             

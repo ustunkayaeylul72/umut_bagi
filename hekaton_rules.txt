@@ -1,0 +1,177 @@
+1. GİRİŞ VE AMAÇ
+Bu doküman, düzenlenecek olan hekaton yarışması kapsamında geliştirilecek projelerin uyması gereken kurumsal mimari standartları, kod düzenini, veri tabanı yönetimini, güvenlik protokollerini ve canlıya alım (deployment) süreçlerini belirlemek amacıyla hazırlanmıştır.
+Yarışmacı takımların üreteceği çözümlerin ticari birer ürüne dönüşebilmesi için projenin ilk gününden itibaren "Production-Ready" (Canlı Ortama Hazır) standartlarda kodlanması bir zorunluluktur. Takımlar mimari seçimlerinde (Monolitik, Mikroservis veya Hibrit) tamamen serbesttir; ancak seçilen mimarinin tasarımı, klasör düzeni ve bulut entegrasyonu bu kılavuzda belirtilen kurallara uymak zorundadır. Teknik standartlara uymayan projeler, fikir kalitesine bakılmaksızın elenecektir.
+2. MİMARİ SEÇENEKLER VE ZORUNLU STANDARTLAR
+Takımlar projelerinin büyüklüğüne ve kapsamına göre aşağıdaki üç mimari modelden birini seçecek ve bunu README.md dosyasında teknik gerekçeleriyle beyan edecektir.
+A. Monolitik Mimari (Tümleşik Yapı)
+Kullanıcı arayüzü, iş mantığı (backend) ve veri tabanı işlemlerinin tek bir proje ve tek bir çalışma birimi (runtime) içinde toplandığı yapılardır.
+Zorunluluk: "Spagetti Kod" yapısı kesinlikle yasaktır. Kod tabanı katmanlı (Controllers/Routes, Services, Models) veya modüler olarak ayrılmalıdır.
+Deployment: Proje tek bir Docker Container haline getirilerek Google Cloud Run üzerinde host edilmelidir.
+B. Mikroservis Mimarisi (Ayrık Yapı)
+Uygulamanın, birbirleriyle ağ üzerinden (REST API) konuşan, tamamen bağımsız çalışan küçük servislere bölündüğü yapılardır (Örn: Auth Servisi, AI Servisi, Veri İşleme Servisi).
+Zorunluluk: Servisler birbirlerinin veri tabanına doğrudan erişemez, sadece API ile konuşabilir. Merkezi bir yönlendirme mekanizması (API Gateway) kurgulanmalıdır.
+Deployment: Her mikroservisin kendine ait Dockerfile'ı olmalı ve Google Cloud Run üzerinde ayrı birer servis olarak dağıtılmalıdır.
+C. Hibrit Mimari (Karma Yapı)
+Kullanıcı arayüzünün bağımsız bir platformda, iş mantığının ise başka bir platformda veya monolitik bir backend yanında çalışan bağımsız bir yapay zeka/analiz servisinde barındırıldığı modeldir.
+Zorunluluk: Katmanlar arasındaki yetkilendirme ve veri akış yönü net olmalıdır.
+Deployment: Frontend (React) Vercel platformunda, ana backend ve yardımcı mikroservisler (Python Flask) Google Cloud Run üzerinde barındırılmalıdır.
+3. SEÇİLEN MİMARİYE GÖRE KESİN DOSYA YAPILARI (MONOREPO)
+Takımlar seçtikleri mimari modelin altındaki klasör ağacına milimetrik olarak uymak zorundadır. Gereksiz ve sisteme dahil olmayan dosyalar repoda barındırılamaz.
+Seçenek 1: Monolitik Mimari Klasör Düzeni
+Plaintext
+📁 hekaton-monolith-root/
+│
+├── 📁 app/                       # Flask Uygulama Kökü
+│   ├── 📁 static/                # HTML, CSS, JavaScript (React derleme çıktıları)
+│   ├── 📁 templates/             # Jinja2 HTML şablonları (Eğer kullanılacaksa)
+│   ├── 📁 routes/                # API uç noktaları ve sayfa yönlendirmeleri
+│   ├── 📁 services/              # İş mantığı, algoritmalar ve veri işleme
+│   ├── 📁 models/                # SQL Tablo Modelleri (ORM)
+│   │   ├── 📄 user.py
+│   │   └── 📄 __init__.py
+│   └── 📄 __init__.py            # Uygulama başlatıcı (App Factory)
+│
+├── 📄 Dockerfile                 # Tüm monoliti paketleyen Docker dosyası
+├── 📄 requirements.txt           # Python bağımlılıkları
+├── 📄 .env.example               # Gizli değişken şablonu
+├── 📄 schema.sql                 # Boş veri tabanı şeması
+├── 📄 seed.sql                   # Jüri testi için hazır örnek veriler
+└── 📄 README.md                  # Proje dokümantasyonu
+Seçenek 2: Mikroservis Mimarisi Klasör Düzeni
+Plaintext
+📁 hekaton-microservices-root/
+│
+├── 📁 gateway/                   # İstekleri karşılayan ve dağıtan ana kapı (API Gateway)
+│   ├── 📄 app.py
+│   └── 📄 Dockerfile
+│
+├── 📁 auth-service/              # Kullanıcı doğrulama servisi (Flask) + Kendi SQL Veri Tabanı
+│   ├── 📁 app/
+│   ├── 📄 Dockerfile
+│   └── 📄 requirements.txt
+│
+├── 📁 data-service/              # Veri işleme servisi (Flask) + Kendi SQL Veri Tabanı
+│   ├── 📁 app/
+│   ├── 📄 Dockerfile
+│   └── 📄 requirements.txt
+│
+├── 📄 docker-compose.yml         # Lokal testler için orkestrasyon dosyası
+├── 📄 schema.sql                 # Tüm servislerin şemalarını içeren toplu SQL dosyası
+├── 📄 seed.sql                   # Test verileri
+└── 📄 README.md
+Seçenek 3: Hibrit Mimari Klasör Düzeni
+Plaintext
+📁 hekaton-hybrid-root/
+│
+├── 📁 frontend/                  # Vercel'e gidecek React Projesi
+│   ├── 📁 public/
+│   ├── 📁 src/
+│   │   ├── 📁 components/        # Tekrar kullanılabilir UI elemanları
+│   │   ├── 📁 views/             # Sayfalar (Dashboard, Home vb.)
+│   │   └── 📁 services/          # API istek fonksiyonları (api.js)
+│   ├── 📄 package.json
+│   └── 📄 .env.example
+│
+├── 📁 core-backend/              # GCP'ye gidecek ana Flask API + SQL Veri Tabanı
+│   ├── 📁 app/
+│   │   ├── 📁 models/            # ORM Modelleri
+│   │   └── 📄 __init__.py
+│   ├── 📄 Dockerfile
+│   ├── 📄 requirements.txt
+│   ├── 📄 schema.sql
+│   └── 📄 seed.sql
+│
+└── 📄 README.md
+4. BACKEND GELİŞTİRME VE GÜVENLİK STANDARTLARI
+4.1. Application Factory Deseni (Tasarım Kalıbı)
+Flask uygulamasında global değişken karmaşasını önlemek adına create_app() fonksiyonu üzerinden dinamik başlatma mimarisi uygulanacaktır. app/__init__.py dosyası şu standartta kurulmalıdır:
+Python
+from flask import Flask
+from flask_cors import CORS
+import os
+def create_app():
+    app = Flask(__name__)
+    # Güvenlik Protokolü: CORS Yapılandırması
+    CORS(app, resources={r"/api/*": {"origins": os.environ.get("ALLOWED_ORIGINS", "*")}})
+    # Blueprint'lerin (Rota Gruplarının) Kaydedilmesi
+    from .routes import api_bp
+    app.register_blueprint(api_bp, url_prefix='/api')
+    return app
+4.2. Docker Konteynerizasyon Kuralları
+Bulut ortamına çıkacak her bir backend birimi için aşağıdaki Dockerfile standardı optimize edilerek kullanılacaktır. Ağır ve optimize edilmemiş imajlar elenme sebebidir.
+Dockerfile
+# Hafiflik ve hız için alpine veya slim imajı tercih edilmelidir
+FROM python:3.9-slim
+# Çalışma dizinini sabitle
+WORKDIR /app
+# Katman önbellekleme (layer caching) avantajı için önce bağımlılıkları kurun
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+# Kalan tüm kaynak kodları container içine aktar
+COPY . .
+# Google Cloud Run dinamik port yönetimi
+ENV PORT 8080
+EXPOSE 8080
+# Production seviyesi bir WSGI sunucusu olan Gunicorn ile uygulamayı ayağa kaldır
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 "app:create_app()"
+5. FRONTEND GELİŞTİRME VE ENTEGRASYON STANDARTLARI
+5.1. API Servis Yönetimi
+React bileşenlerinin (components) içinde doğrudan ham fetch veya axios çağrıları yapmak kesinlikle yasaktır. Tüm dış bağlantılar src/services/api.js dosyası altında merkezi bir instance üzerinden yönetilmelidir:
+JavaScript
+import axios from 'axios';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+export const dataService = {
+  fetchAnalytics: async () => {
+    try {
+      const response = await apiClient.get('/analytics');
+      return response.data;
+    } catch (error) {
+      console.error('API Hatası:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+};
+6. VERI TABANI (SQL) VE VERI YÖNETİM STANDARTLARI
+6.1. Mimarilere Göre SQL Kuralları
+Monolitik Yaklaşım: Tüm katmanlar tek bir veri tabanına bağlanır. Tablolar arası Foreign Key ilişkileri eksiksiz tanımlanmalıdır.
+Mikroservis Yaklaşımı (Database-per-Service): Her mikroservis sadece kendi SQL veri tabanından sorumludur. Servislerin birbirlerinin veri tabanına doğrudan JOIN atması veya sorgu göndermesi kesinlikle yasaktır. İletişim sadece API üzerinden kurulur.
+Arayüz Kısıtı: Frontend (React), veri tabanına asla doğrudan bağlanamaz. Veri tabanı sürücüleri istemci tarafında barındırılamaz.
+6.2. SQL Bağlantı Güvenliği
+Veri tabanı bağlantı cümleleri (Connection String) ve şifreleri asla kodun içine yazılmamalıdır. Flask-SQLAlchemybağlantıları şu dinamik yapıda kurulmalıdır:
+Python
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+app = Flask(__name__)
+# Güvenli Bağlantı Yönetimi
+# Canlı veri tabanı adresi yoksa lokalde otomatik sqlite oluşturur, çökmeyi engeller.
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL', 
+    'sqlite:///hekaton_local.db'
+)
+db = SQLAlchemy(app)
+6.3. Şema ve Test Verisi Zorunluluğu
+Jürinin uygulamayı ve veri yapısını test edebilmesi için proje kök dizininde şu iki dosyanın bulunması zorunludur:
+schema.sql: Veri tabanının tüm boş tablolarını ve ilişkilerini kuran SQL komutları.
+seed.sql: Sistemi test etmek için kullanılacak örnek kullanıcılar, veriler ve içerikleri barındıran hazır SQL kayıtları.
+7. HASSAS VERİ (SENSITIVE DATA) VE GİZLİLİK KURALLARI
+Siber güvenlik standartları gereği harici servis anahtarları (Database şifreleri, Yapay Zeka API Anahtarları vb.) korunmalıdır.
+Kural 1: Kod tabanında statik olarak yazılmış (hardcoded) bir API anahtarı tespit edildiği an, ilgili takım güvenlik ihlalinden doğrudan diskalifiye edilir.
+Kural 2: .env dosyaları lokalde kalmalı, kesinlikle GitHub'a pushlanmamalıdır. Bunun yerine değişken isimlerini gösteren içi boş .env.example dosyaları repoya eklenmelidir.
+Kural 3: Canlı ortama geçildiğinde bu şifreler Vercel Dashboard ve Google Cloud Run panellerindeki Environment Variables alanına elle girilmelidir.
+8. UÇTAN UCA (E2E) DEPLOYMENT AKIŞI
+Takımlar dağıtım esnasında kaos yaşamamak için şu üretim bandını sırasıyla takip etmelidir:
+Plaintext
+[AŞAMA 1: API Canlıya Alım] 
+Backend Kodları -> Dockerize Etme -> Google Cloud Run Dağıtımı -> Canlı Backend URL Kazanımı
+                                                                              │
+[AŞAMA 2: Arayüz Entegrasyonu]                                                ▼
+Vercel'e Gir -> React .env Değişkenine Kopyala -> GitHub Push -> Vercel Otomatik Derleme
+Sıralama: Önce backend birimleri canlıya alınmalı ve URL'leri üretilmelidir. Frontend en son aşamada bu URL'leri alarak Vercel'e çıkmalıdır.
+Hata Takibi: Canlı ortamda alınan hatalarda tarayıcı konsolu yerine bulut sağlayıcıların log mekanizmaları (Vercel Runtime Logs / GCP Logs Explorer) incelenmelidir.

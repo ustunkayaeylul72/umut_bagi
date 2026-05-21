@@ -12,6 +12,18 @@ class Listing(db.Model):
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(50), default='open', nullable=False)
+    listing_type = db.Column(db.String(50), default='donation', nullable=False) # 'donation' veya 'need'
+    city = db.Column(db.String(100), nullable=True)
+    district = db.Column(db.String(100), nullable=True)
+    image_url = db.Column(db.String(255), nullable=True)
+    # İlanı Talep Eden (Eşleşen) Kullanıcının Girdiği İletişim Bilgileri
+    claimer_name = db.Column(db.String(150), nullable=True)
+    claimer_phone = db.Column(db.String(20), nullable=True)
+    claimer_address = db.Column(db.Text, nullable=True)
+    
+    # İhtiyaç İlanını Açan Kişinin İletişim Bilgileri
+    contact_phone = db.Column(db.String(20), nullable=True)
+    contact_address = db.Column(db.Text, nullable=True)
     
     # Yabancı Anahtarlar (Foreign Keys)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
@@ -45,8 +57,17 @@ class Listing(db.Model):
             "description": self.description,
             "category": self.category,
             "status": self.status,
+            "listing_type": self.listing_type,
+            "city": self.city,
+            "district": self.district,
+            "image_url": self.image_url,
             "created_by": self.created_by,
-            "matched_donor_id": self.matched_donor_id
+            "matched_donor_id": self.matched_donor_id,
+            "claimer_name": self.claimer_name,
+            "claimer_phone": self.claimer_phone,
+            "claimer_address": self.claimer_address,
+            "contact_phone": self.contact_phone,
+            "contact_address": self.contact_address
         }
 
     def __repr__(self):

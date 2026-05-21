@@ -220,19 +220,29 @@ function setupAuthForms() {
 // --- İLAN (LISTING) SAYFASI İŞLEMLERİ ---
 let allListings = [];
 
-async function loadListings() {
+async function loadListings(silent = false) {
     const grid = document.getElementById("listings-grid");
     if (!grid) return;
 
-    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2xl" style="color: var(--secondary);"></i><p style="margin-top: 1rem; color: var(--text-muted);">İlanlar yükleniyor...</p></div>';
+    if (!silent) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2xl" style="color: var(--secondary);"></i><p style="margin-top: 1rem; color: var(--text-muted);">İlanlar yükleniyor...</p></div>';
+    }
 
     try {
         const response = await fetch("/api/listings");
-        allListings = await response.json();
+        const freshListings = await response.json();
         
+        // Eğer sessiz yenileme yapılıyorsa ve veri değişmemişse arayüzü boşuna yenileme (flicker olmaması için)
+        if (silent && JSON.stringify(allListings) === JSON.stringify(freshListings)) {
+            return;
+        }
+        
+        allListings = freshListings;
         displayListings(allListings);
     } catch (err) {
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--danger);"><i class="fa-solid fa-triangle-exclamation fa-2xl"></i><p style="margin-top: 1rem;">İlanlar yüklenirken bir hata oluştu.</p></div>';
+        if (!silent) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--danger);"><i class="fa-solid fa-triangle-exclamation fa-2xl"></i><p style="margin-top: 1rem;">İlanlar yüklenirken bir hata oluştu.</p></div>';
+        }
     }
 }
 
@@ -251,18 +261,106 @@ function displayListings(listings) {
         let actionBtn = "";
         
         if (l.status === "open") {
-            if (currentUser && currentUser.role === "donor") {
-                actionBtn = `<button onclick="matchListing(${l.id})" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 1.25rem;"><i class="fa-solid fa-hand-holding-heart"></i> Destek Ol / Üstlen</button>`;
-            } else if (!currentUser) {
-                actionBtn = `<a href="/auth/view" class="btn btn-outline btn-sm" style="width: 100%; margin-top: 1.25rem; font-size: 0.8rem;"><i class="fa-solid fa-lock"></i> Destek Olmak İçin Giriş Yap</a>`;
-            } else {
-                actionBtn = `<div style="width: 100%; margin-top: 1.25rem; font-size: 0.85rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-info-circle"></i> Donör Eşleşmesi Bekleniyor</div>`;
+            // BAĞIŞ İLANI ise
+            if (l.listing_type === "donation") {
+                if (currentUser && currentUser.role === "disabled") {
+                    if (currentUser.is_verified) {
+                        actionBtn = `
+                        <button onclick="matchListing(${l.id})" class="flex-1 flex items-center justify-center gap-2 bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2.5 px-2 rounded-xl active:scale-95 transition-transform duration-200 shadow-sm text-sm sm:text-base">
+                          <span class="text-lg">🤝</span>
+                          <span>İhtiyacım Var (Talep Et)</span>
+                        </button>
+                        `;
+                    } else {
+                        actionBtn = `<div class="w-full text-center bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold py-2.5 px-4 rounded-xl transition-colors duration-200 text-sm border border-orange-200"><i class="fa-solid fa-shield-halved"></i> Talep Etmek İçin Raporunuzu Doğrulayın</div>`;
+                    }
+                } else if (currentUser && currentUser.role === "donor") {
+                    if (currentUser.id === l.created_by) {
+                        actionBtn = `
+                        <div class="w-full text-center text-gray-500 font-medium py-2 text-sm mb-2"><i class="fa-solid fa-info-circle"></i> İhtiyaç Sahibinin Talebi Bekleniyor</div>
+                        <div class="flex justify-end mt-1">
+                            <button onclick="deleteListing(${l.id})" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-1.5 px-3 rounded-lg transition-colors text-xs border border-red-200"><i class="fa-solid fa-trash"></i> Bağış İlanını Kaldır</button>
+                        </div>
+                        `;
+                    } else {
+                        actionBtn = `<div class="w-full text-center text-gray-500 font-medium py-2 text-sm"><i class="fa-solid fa-info-circle"></i> İhtiyaç Sahibinin Talebi Bekleniyor</div>`;
+                    }
+                } else {
+                    actionBtn = `<a href="/auth/view" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-xl transition-colors duration-200 text-sm"><i class="fa-solid fa-lock"></i> Talep Etmek İçin Giriş Yap</a>`;
+                }
+            } 
+            // İHTİYAÇ İLANI ise
+            else if (l.listing_type === "need") {
+                if (currentUser && currentUser.role === "donor") {
+                    actionBtn = `
+                    <div class="flex flex-col sm:flex-row gap-2 w-full">
+                        <button onclick="matchListing(${l.id}, 'donate')" class="flex-1 flex items-center justify-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-1 rounded-xl active:scale-95 transition-transform duration-200 shadow-sm text-sm">
+                            <span class="text-lg">📦</span>
+                            <span>Elindekini Bağışla</span>
+                        </button>
+                        <button onclick="matchListing(${l.id}, 'purchase')" class="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-1 rounded-xl active:scale-95 transition-transform duration-200 shadow-sm text-sm">
+                            <span class="text-lg">🛒</span>
+                            <span>Üstlen (Satın Al)</span>
+                        </button>
+                    </div>
+                    `;
+                } else if (currentUser && currentUser.role === "disabled") {
+                    if (currentUser.id === l.created_by) {
+                        actionBtn = `
+                        <div class="w-full text-center text-gray-500 font-medium py-2 text-sm mb-2"><i class="fa-solid fa-info-circle"></i> Bağışçının Desteği Bekleniyor</div>
+                        <div class="flex justify-end mt-1">
+                            <button onclick="deleteListing(${l.id})" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-1.5 px-3 rounded-lg transition-colors text-xs border border-red-200"><i class="fa-solid fa-trash"></i> Talebimi Kaldır</button>
+                        </div>
+                        `;
+                    } else {
+                        actionBtn = `<div class="w-full text-center text-gray-500 font-medium py-2 text-sm"><i class="fa-solid fa-info-circle"></i> Bağışçının Desteği Bekleniyor</div>`;
+                    }
+                } else {
+                    actionBtn = `<a href="/auth/view" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-xl transition-colors duration-200 text-sm"><i class="fa-solid fa-lock"></i> Destek Olmak İçin Giriş Yap</a>`;
+                }
             }
         } else {
-            const donorName = l.matched_donor_name || "Bir Donör";
-            actionBtn = `<div style="width: 100%; margin-top: 1.25rem; padding: 0.5rem; background: rgba(78, 205, 196, 0.08); border-radius: var(--radius-sm); font-size: 0.85rem; text-align: center; color: var(--secondary); border: 1px dashed rgba(78, 205, 196, 0.3);">
-                <i class="fa-solid fa-circle-check"></i> ${donorName} tarafından üstlenildi
-            </div>`;
+            const donorName = l.matched_donor_name || "Bir Üye";
+            if (l.listing_type === "donation") {
+                const isCreator = currentUser && currentUser.id === l.created_by;
+                const isMatchedUser = currentUser && currentUser.id === l.matched_donor_id; // disabled user who claimed it
+                if (isCreator && l.claimer_name) {
+                    actionBtn = `
+                    <div class="flex-1 w-full bg-teal-50 p-4 rounded-xl border border-teal-200 mt-2">
+                        <div class="text-sm font-bold text-teal-800 mb-2 border-b border-teal-200 pb-1"><i class="fa-solid fa-address-book"></i> Talep Edenin İletişim Bilgileri</div>
+                        <p class="text-xs text-teal-900 mb-1"><strong><i class="fa-solid fa-user text-teal-600 w-4"></i></strong> ${escapeHtml(l.claimer_name)}</p>
+                        <p class="text-xs text-teal-900 mb-1"><strong><i class="fa-solid fa-phone text-teal-600 w-4"></i></strong> ${escapeHtml(l.claimer_phone)}</p>
+                        <p class="text-xs text-teal-900"><strong><i class="fa-solid fa-map-location-dot text-teal-600 w-4"></i></strong> ${escapeHtml(l.claimer_address)}</p>
+                    </div>`;
+                } else if (isMatchedUser) {
+                    actionBtn = `
+                    <div class="w-full text-center bg-emerald-50 text-emerald-600 border border-emerald-200 font-medium py-2 rounded-xl text-sm mb-2"><i class="fa-solid fa-circle-check"></i> Bu ilanı siz talep ettiniz.</div>
+                    <div class="flex justify-end mt-1">
+                        <button onclick="cancelMatch(${l.id})" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-1.5 px-3 rounded-lg transition-colors text-xs border border-red-200"><i class="fa-solid fa-xmark"></i> Talebimi İptal Et</button>
+                    </div>
+                    `;
+                } else {
+                    actionBtn = `<div class="w-full text-center bg-emerald-50 text-emerald-600 border border-emerald-200 font-medium py-2 rounded-xl text-sm"><i class="fa-solid fa-circle-check"></i> ${donorName} isimli üyeye rezerve edildi</div>`;
+                }
+            } else {
+                const isMatchedDonor = currentUser && currentUser.id === l.matched_donor_id;
+                if (isMatchedDonor) {
+                    actionBtn = `
+                    ${l.contact_phone ? `
+                    <div class="flex-1 w-full bg-blue-50 p-4 rounded-xl border border-blue-200 mt-2 mb-2">
+                        <div class="text-sm font-bold text-blue-800 mb-2 border-b border-blue-200 pb-1"><i class="fa-solid fa-address-book"></i> İhtiyaç Sahibinin İletişim Bilgileri</div>
+                        <p class="text-xs text-blue-900 mb-1"><strong><i class="fa-solid fa-user text-blue-600 w-4"></i></strong> ${escapeHtml(l.creator_name)}</p>
+                        <p class="text-xs text-blue-900 mb-1"><strong><i class="fa-solid fa-phone text-blue-600 w-4"></i></strong> ${escapeHtml(l.contact_phone)}</p>
+                        <p class="text-xs text-blue-900"><strong><i class="fa-solid fa-map-location-dot text-blue-600 w-4"></i></strong> ${escapeHtml(l.contact_address)}</p>
+                    </div>` : `<div class="w-full text-center bg-blue-50 text-blue-600 border border-blue-200 font-medium py-2 rounded-xl text-sm mb-2"><i class="fa-solid fa-circle-check"></i> Bu ihtiyacı siz üstlendiniz.</div>`}
+                    <div class="flex justify-end mt-1">
+                        <button onclick="cancelMatch(${l.id})" class="bg-red-50 hover:bg-red-100 text-red-600 font-medium py-1.5 px-3 rounded-lg transition-colors text-xs border border-red-200"><i class="fa-solid fa-xmark"></i> İşlemi İptal Et</button>
+                    </div>
+                    `;
+                } else {
+                    actionBtn = `<div class="w-full text-center bg-emerald-50 text-emerald-600 border border-emerald-200 font-medium py-2 rounded-xl text-sm"><i class="fa-solid fa-hand-holding-heart"></i> Bu ihtiyaç ${donorName} tarafından karşılandı</div>`;
+                }
+            }
         }
 
         // Akıllı Onay Rozeti ve Rapor Detayları
@@ -272,30 +370,54 @@ function displayListings(listings) {
             if (l.creator_percentage && l.creator_group) {
                 details = ` (%${l.creator_percentage} ${l.creator_group})`;
             }
-            verifiedBadgeMarkup = `<span class="badge-verified" style="margin-left: 0.5rem;" title="e-Devlet & Sağlık Bakanlığı Rapor Onaylı"><i class="fa-solid fa-shield-check"></i> Onaylı${details}</span>`;
+            verifiedBadgeMarkup = `
+            <div class="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md text-xs font-medium" title="e-Devlet & Sağlık Bakanlığı Rapor Onaylı">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Onaylı${details}</span>
+            </div>`;
+        }
+
+        // Resim varsa
+        let imageMarkup = "";
+        if (l.image_url) {
+            imageMarkup = `<img src="/static/${l.image_url}" alt="İlan Görseli" class="w-full h-48 object-cover border-b border-gray-100">`;
+        }
+
+        let cardBorderColor = l.listing_type === 'need' ? 'border-orange-200' : 'border-gray-100';
+        let badgeType = l.listing_type === 'need' 
+            ? `<span class="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full uppercase tracking-wider"><i class="fa-solid fa-bullhorn mr-1"></i> İHTİYAÇ: ${escapeHtml(l.category)}</span>`
+            : `<span class="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full uppercase tracking-wider"><i class="fa-solid fa-gift mr-1"></i> BAĞIŞ: ${escapeHtml(l.category)}</span>`;
+
+        let locationMarkup = "";
+        if (l.listing_type === 'need' && l.city && l.district) {
+            locationMarkup = `<div class="text-xs text-orange-600 mt-2 flex items-center gap-1 font-medium"><i class="fa-solid fa-location-dot"></i> ${escapeHtml(l.city)} / ${escapeHtml(l.district)}</div>`;
         }
 
         return `
-            <article class="card">
-                <div>
-                    <div class="card-header">
-                        <span class="card-category">${escapeHtml(l.category)}</span>
-                        <span class="status-badge status-${l.status}">${l.status === 'open' ? 'Açık' : 'Eşleşti'}</span>
-                    </div>
-                    <h3 class="card-title">${escapeHtml(l.title)}</h3>
-                    <p class="card-description">${escapeHtml(l.description)}</p>
+            <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border ${cardBorderColor} overflow-hidden flex flex-col h-full text-left">
+              ${imageMarkup}
+              <div class="p-5 flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                  ${badgeType}
+                  ${verifiedBadgeMarkup}
                 </div>
-                <div>
-                    <div class="card-footer" style="flex-wrap: wrap; gap: 0.5rem;">
-                        <span class="card-meta" style="display: flex; align-items: center; flex-wrap: wrap;">
-                            <i class="fa-solid fa-user" style="margin-right: 0.4rem;"></i> 
-                            <strong>${escapeHtml(l.creator_name)}</strong>
-                            ${verifiedBadgeMarkup}
-                        </span>
-                    </div>
-                    ${actionBtn}
+                <h3 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                  ${escapeHtml(l.title)}
+                </h3>
+                <p class="text-gray-600 text-sm line-clamp-3 mb-4 flex-1">
+                  ${escapeHtml(l.description)}
+                </p>
+                <div class="text-xs text-gray-500 mt-2 flex items-center justify-between">
+                  <div class="flex items-center gap-1">
+                    <i class="fa-solid fa-user"></i> <strong>${escapeHtml(l.creator_name)}</strong>
+                  </div>
+                  ${locationMarkup}
                 </div>
-            </article>
+              </div>
+              <div class="p-4 pt-0 mt-auto flex gap-3 w-full">
+                ${actionBtn}
+              </div>
+            </div>
         `;
     }).join("");
 }
@@ -321,110 +443,292 @@ function filterListings(category) {
 }
 
 // İlan Eşleştirme (Destek Olma)
-async function matchListing(listingId) {
+async function matchListing(listingId, actionType = 'default') {
     const user = getLoggedInUser();
-    if (!user || user.role !== "donor") {
-        showToast("Bu işlem için donör girişi yapmanız gerekmektedir.", "danger");
-        return;
-    }
+    
+    // Hangi ilanı üstlendiğimizi bulalım (Bağış mı İhtiyaç mı)
+    const listing = allListings.find(l => l.id === listingId);
+    if (!listing) return;
 
-    if (!confirm("Bu ilanı üstlenmek ve destek olmak istediğinizden emin misiniz?")) {
-        return;
+    if (listing.listing_type === "donation") {
+        if (!user || user.role !== "disabled") {
+            showToast("Bağış ilanlarını talep etmek için engelli üye girişi yapmanız gerekmektedir.", "danger");
+            return;
+        }
+        if (!user.is_verified) {
+            showToast("İlanı talep edebilmek için lütfen önce e-Devlet raporunuzu doğrulayın.", "danger");
+            return;
+        }
+        
+        // Eşleşme (Talep) modalını aç
+        const claimModalBackdrop = document.getElementById("claim-modal");
+        const claimListingId = document.getElementById("claim-listing-id");
+        const claimName = document.getElementById("claim-name");
+        
+        if (claimModalBackdrop && claimListingId) {
+            claimListingId.value = listingId;
+            if (claimName) claimName.value = user.name;
+            
+            claimModalBackdrop.style.display = "flex";
+            setTimeout(() => {
+                claimModalBackdrop.style.opacity = "1";
+                claimModalBackdrop.style.pointerEvents = "auto";
+                const content = document.getElementById("claim-modal-content");
+                if (content) content.classList.remove("scale-95", "opacity-0");
+            }, 10);
+        }
+        return; // İşlemi Modal Submit yakalayacak
+        
+    } else if (listing.listing_type === "need") {
+        if (!user || user.role !== "donor") {
+            showToast("İhtiyaç ilanlarına destek olabilmek için bağışçı girişi yapmanız gerekmektedir.", "danger");
+            return;
+        }
+        
+        // Popup engelleyiciyi aşmak için kullanıcı tıkladığı an (senkron olarak) sekme açılır.
+        let newTab = null;
+        if (actionType === 'purchase') {
+            newTab = window.open("about:blank", "_blank");
+        }
+        
+        // Donor ihtiyaç eşleşmesi
+        submitMatchRequest(listingId, {}, actionType === 'purchase', newTab);
     }
+}
+
+async function submitMatchRequest(listingId, payload, isNeedMatch = false, newTab = null) {
+    const user = getLoggedInUser();
+    payload.donor_id = user.id;
 
     try {
         const response = await fetch(`/api/listings/${listingId}/match`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ donor_id: user.id })
+            body: JSON.stringify(payload)
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            showToast("Harika! İlanı başarıyla üstlendiniz, dayanışmanız için teşekkür ederiz.");
+            showToast(data.message || "Eşleşme başarıyla tamamlandı.");
+            loadListings();
+            if (isNeedMatch && newTab) {
+                newTab.location.href = "https://share.google/C4ums0PGjIeNKsIjL";
+            } else if (!isNeedMatch) {
+                // Elindekini bağışla denildiyse belirgin bir uyarı ver.
+                const listing = allListings.find(l => l.id === listingId);
+                if (listing) {
+                    alert(`BAĞIŞ BİLGİLERİ:\n\nAd Soyad: ${listing.creator_name}\nTelefon: ${listing.contact_phone || 'Belirtilmemiş'}\nAdres: ${listing.contact_address || 'Belirtilmemiş'}\n\nLütfen kargonuzu bu adrese yönlendiriniz.`);
+                }
+            }
+        } else {
+            if (newTab) newTab.close();
+            showToast(data.error || "Eşleşme başarısız oldu.", "danger");
+        }
+    } catch (err) {
+        if (newTab) newTab.close();
+        showToast("Sunucu ile bağlantı hatası.", "danger");
+    }
+}
+
+async function cancelMatch(listingId) {
+    if (!confirm("Bu işlemi iptal etmek istediğinizden emin misiniz? İlan tekrar yayınlanacaktır.")) return;
+
+    const user = getLoggedInUser();
+    try {
+        const response = await fetch(`/api/listings/${listingId}/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: user.id })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast(data.message || "İptal işlemi başarıyla gerçekleştirildi.");
             loadListings();
         } else {
-            showToast(data.error || "Eşleşme başarısız oldu.", "danger");
+            showToast(data.error || "İşlem başarısız oldu.", "danger");
         }
     } catch (err) {
         showToast("Sunucu ile bağlantı hatası.", "danger");
     }
 }
 
-// Yeni İlan Oluşturma Formu Kontrolleri
+async function deleteListing(listingId) {
+    if (!confirm(\'Bu ilanı tamamen kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz.\')) return;
+    const user = getLoggedInUser();
+    try {
+        const response = await fetch(/api/listings/, {
+            method: \'DELETE\',
+            headers: { \'Content-Type\': \'application/json\' },
+            body: JSON.stringify({ user_id: user.id })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            showToast(data.message || \'İlan başarıyla kaldırıldı.\');
+            loadListings();
+        } else {
+            showToast(data.error || \'İlan silinemedi.\', \'danger\');
+        }
+    } catch (err) {
+        showToast(\'Sunucu ile bağlantı hatası.\', \'danger\');
+    }
+}
+
+// Yeni İlan Oluşturma Formu Kontrolleri (Tailwind CSS Modal & Resim Yükleme Entegrasyonu)
 function setupListingForm() {
     const openModalBtn = document.getElementById("btn-new-listing");
     const closeModalBtn = document.getElementById("btn-close-modal");
+    const cancelModalBtn = document.getElementById("btn-cancel-modal");
     const modalBackdrop = document.getElementById("new-listing-modal");
     const form = document.getElementById("form-new-listing");
+    
+    // Resim Yükleme Elemanları
+    const imageInput = document.getElementById("listing-image");
+    const uploadBox = document.getElementById("image-upload-box");
+    const previewBox = document.getElementById("image-preview-box");
+    const previewImg = document.getElementById("image-preview-img");
+    const removeImgBtn = document.getElementById("btn-remove-image");
 
     const user = getLoggedInUser();
     
-    // Doğrulanmış engelli ise "Yeni İlan Aç" butonunu göster
+    // SADECE DONÖRLER (Bağışçılar) "İlan Aç" Butonunu Görebilir
     if (openModalBtn) {
-        if (user && user.role === "disabled" && user.is_verified) {
+        if (user && user.role === "donor") {
             openModalBtn.style.display = "inline-flex";
         } else {
             openModalBtn.style.display = "none";
         }
     }
 
-    if (openModalBtn && modalBackdrop) {
-        openModalBtn.addEventListener("click", () => {
-            modalBackdrop.classList.add("active");
-        });
+    // SADECE ONAYLI ENGELLİLER "İhtiyacım Var" Butonunu Görebilir
+    const openNeedBtn = document.getElementById("btn-new-need");
+    if (openNeedBtn) {
+        if (user && user.role === "disabled" && user.is_verified) {
+            openNeedBtn.style.display = "inline-flex";
+        } else {
+            openNeedBtn.style.display = "none";
+        }
     }
 
-    if (closeModalBtn && modalBackdrop) {
-        closeModalBtn.addEventListener("click", () => {
-            modalBackdrop.classList.remove("active");
-        });
-    }
+    const openModal = () => {
+        modalBackdrop.style.display = "flex";
+        setTimeout(() => {
+            modalBackdrop.style.opacity = "1";
+            modalBackdrop.style.pointerEvents = "auto";
+            const content = document.getElementById("new-listing-modal-content");
+            if (content) content.classList.remove("scale-95", "opacity-0");
+        }, 10);
+    };
+
+    const closeModal = () => {
+        const content = document.getElementById("new-listing-modal-content");
+        if (content) content.classList.add("scale-95", "opacity-0");
+        modalBackdrop.style.opacity = "0";
+        modalBackdrop.style.pointerEvents = "none";
+        setTimeout(() => {
+            modalBackdrop.style.display = "none";
+            if (form) form.reset();
+            if (removeImgBtn) removeImgBtn.click(); // Resmi sıfırla
+        }, 300);
+    };
+
+    if (openModalBtn && modalBackdrop) openModalBtn.addEventListener("click", openModal);
+    if (closeModalBtn && modalBackdrop) closeModalBtn.addEventListener("click", closeModal);
+    if (cancelModalBtn && modalBackdrop) cancelModalBtn.addEventListener("click", closeModal);
 
     if (modalBackdrop) {
         modalBackdrop.addEventListener("click", (e) => {
-            if (e.target === modalBackdrop) {
-                modalBackdrop.classList.remove("active");
-            }
+            if (e.target === modalBackdrop) closeModal();
         });
     }
 
-    // Form Submit
+    // Drag & Drop Image Logic
+    if (imageInput && uploadBox && previewBox && previewImg && removeImgBtn) {
+        imageInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    previewImg.src = ev.target.result;
+                    uploadBox.classList.add("hidden");
+                    previewBox.classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        uploadBox.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadBox.classList.add("border-blue-500", "bg-blue-50");
+        });
+        
+        uploadBox.addEventListener("dragleave", () => {
+            uploadBox.classList.remove("border-blue-500", "bg-blue-50");
+        });
+
+        uploadBox.addEventListener("drop", (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove("border-blue-500", "bg-blue-50");
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                imageInput.files = e.dataTransfer.files; // FileList aktarımı
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    previewImg.src = ev.target.result;
+                    uploadBox.classList.add("hidden");
+                    previewBox.classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeImgBtn.addEventListener("click", () => {
+            imageInput.value = "";
+            previewImg.src = "";
+            previewBox.classList.add("hidden");
+            uploadBox.classList.remove("hidden");
+        });
+    }
+
+    // Form Submit (Artık JSON değil, FormData olarak gidiyor çünkü dosya var)
     if (form) {
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
-            if (!user || user.role !== "disabled") {
-                showToast("Sadece engelli rolüne sahip kullanıcılar ilan açabilir.", "danger");
-                return;
-            }
-            if (!user.is_verified) {
-                showToast("İlan açmak için önce hesabınızı doğrulamanız gerekmektedir.", "danger");
+            if (!user || user.role !== "donor") {
+                showToast("Sadece bağışçı (donör) rolüne sahip kullanıcılar bağış ilanı açabilir.", "danger");
                 return;
             }
 
             const title = document.getElementById("listing-title").value;
             const category = document.getElementById("listing-category").value;
             const description = document.getElementById("listing-description").value;
+            
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("category", category);
+            formData.append("description", description);
+            formData.append("listing_type", "donation");
+            formData.append("created_by", user.id);
+            
+            if (imageInput && imageInput.files.length > 0) {
+                formData.append("image", imageInput.files[0]);
+            }
+
+            showToast("İlan oluşturuluyor ve resim yükleniyor, lütfen bekleyin...", "warning");
 
             try {
                 const response = await fetch("/api/listings", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        title,
-                        category,
-                        description,
-                        created_by: user.id
-                    })
+                    body: formData // Content-Type belirtilmez, browser boundary ekler
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
                     showToast("İhtiyaç ilanınız başarıyla oluşturuldu.");
-                    form.reset();
-                    modalBackdrop.classList.remove("active");
+                    closeModal();
                     loadListings();
                 } else {
                     showToast(data.error || "İlan oluşturulamadı.", "danger");
@@ -432,6 +736,140 @@ function setupListingForm() {
             } catch (err) {
                 showToast("Sunucu ile bağlantı hatası.", "danger");
             }
+        });
+    }
+    // İhtiyaç Modalı Kontrolleri
+    const needModalBackdrop = document.getElementById("new-need-modal");
+    const closeNeedBtn = document.getElementById("btn-close-need-modal");
+    const cancelNeedBtn = document.getElementById("btn-cancel-need-modal");
+    const needForm = document.getElementById("form-new-need");
+
+    const openNeedModal = () => {
+        needModalBackdrop.style.display = "flex";
+        setTimeout(() => {
+            needModalBackdrop.style.opacity = "1";
+            needModalBackdrop.style.pointerEvents = "auto";
+            const content = document.getElementById("new-need-modal-content");
+            if (content) content.classList.remove("scale-95", "opacity-0");
+        }, 10);
+    };
+
+    const closeNeedModalFunc = () => {
+        const content = document.getElementById("new-need-modal-content");
+        if (content) content.classList.add("scale-95", "opacity-0");
+        needModalBackdrop.style.opacity = "0";
+        needModalBackdrop.style.pointerEvents = "none";
+        setTimeout(() => {
+            needModalBackdrop.style.display = "none";
+            if (needForm) needForm.reset();
+        }, 300);
+    };
+
+    if (openNeedBtn && needModalBackdrop) openNeedBtn.addEventListener("click", openNeedModal);
+    if (closeNeedBtn && needModalBackdrop) closeNeedBtn.addEventListener("click", closeNeedModalFunc);
+    if (cancelNeedBtn && needModalBackdrop) cancelNeedBtn.addEventListener("click", closeNeedModalFunc);
+
+    if (needModalBackdrop) {
+        needModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === needModalBackdrop) closeNeedModalFunc();
+        });
+    }
+
+    // İhtiyaç Formu Submit
+    if (needForm) {
+        needForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!user || user.role !== "disabled" || !user.is_verified) {
+                showToast("Bu işlem için yetkiniz yok.", "danger");
+                return;
+            }
+
+            const city = document.getElementById("need-city").value;
+            const district = document.getElementById("need-district").value;
+            const phone = document.getElementById("need-phone").value;
+            const address = document.getElementById("need-address").value;
+            const category = document.getElementById("need-category").value;
+            const description = document.getElementById("need-description").value;
+            
+            // İhtiyaç için otomatik title oluştur
+            const title = `${user.name} kullanıcısının ${category} İhtiyacı`;
+            
+            const formData = new FormData();
+            formData.append("title", title);
+            formData.append("category", category);
+            formData.append("description", description);
+            formData.append("listing_type", "need");
+            formData.append("city", city);
+            formData.append("district", district);
+            formData.append("contact_phone", phone);
+            formData.append("contact_address", address);
+            formData.append("created_by", user.id);
+
+            showToast("İhtiyaç talebiniz yayınlanıyor...", "warning");
+
+            try {
+                const response = await fetch("/api/listings", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast("İhtiyaç talebiniz başarıyla yayınlandı.");
+                    closeNeedModalFunc();
+                    loadListings();
+                } else {
+                    showToast(data.error || "İlan oluşturulamadı.", "danger");
+                }
+            } catch (err) {
+                showToast("Sunucu ile bağlantı hatası.", "danger");
+            }
+        });
+    }
+
+    // --- TALEP ETME (EŞLEŞME) MODALI KONTROLLERİ ---
+    const claimModalBackdrop = document.getElementById("claim-modal");
+    const closeClaimBtn = document.getElementById("btn-close-claim-modal");
+    const cancelClaimBtn = document.getElementById("btn-cancel-claim-modal");
+    const claimForm = document.getElementById("form-claim-listing");
+
+    const closeClaimModalFunc = () => {
+        const content = document.getElementById("claim-modal-content");
+        if (content) content.classList.add("scale-95", "opacity-0");
+        if (claimModalBackdrop) {
+            claimModalBackdrop.style.opacity = "0";
+            claimModalBackdrop.style.pointerEvents = "none";
+            setTimeout(() => {
+                claimModalBackdrop.style.display = "none";
+                if (claimForm) claimForm.reset();
+            }, 300);
+        }
+    };
+
+    if (closeClaimBtn && claimModalBackdrop) closeClaimBtn.addEventListener("click", closeClaimModalFunc);
+    if (cancelClaimBtn && claimModalBackdrop) cancelClaimBtn.addEventListener("click", closeClaimModalFunc);
+
+    if (claimModalBackdrop) {
+        claimModalBackdrop.addEventListener("click", (e) => {
+            if (e.target === claimModalBackdrop) closeClaimModalFunc();
+        });
+    }
+
+    if (claimForm) {
+        claimForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const listingId = document.getElementById("claim-listing-id").value;
+            const claimerName = document.getElementById("claim-name").value;
+            const claimerPhone = document.getElementById("claim-phone").value;
+            const claimerAddress = document.getElementById("claim-address").value;
+
+            closeClaimModalFunc();
+            submitMatchRequest(listingId, {
+                claimer_name: claimerName,
+                claimer_phone: claimerPhone,
+                claimer_address: claimerAddress
+            });
         });
     }
 }
@@ -530,3 +968,26 @@ function escapeHtml(text) {
     };
     return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
+
+// Canlı Veri Takibi (Polling) - Her 5 saniyede bir ilanları kontrol et
+document.addEventListener("DOMContentLoaded", () => {
+    setInterval(() => {
+        // Sadece sayfa açık ve görünürse (farklı sekmede değilse) çalışsın
+        if (document.visibilityState !== "visible") return;
+        
+        // Kullanıcının açık bir formu (modal) varsa yenilemeyi durdur ki yazdıkları silinmesin/dikkati dağılmasın
+        const claimModal = document.getElementById("claim-modal");
+        const newNeedModal = document.getElementById("new-need-modal");
+        const newDonationModal = document.getElementById("new-listing-modal");
+        
+        const isAnyModalOpen = 
+            (claimModal && claimModal.style.display !== "none") ||
+            (newNeedModal && newNeedModal.style.display !== "none") ||
+            (newDonationModal && newDonationModal.style.display !== "none");
+            
+        if (!isAnyModalOpen) {
+            // true (silent mode) olarak yükle ki Loading ekranı çıkmasın
+            loadListings(true);
+        }
+    }, 5000);
+});

@@ -15,6 +15,8 @@ class User(db.Model):
     disability_summary = db.Column(db.Text, nullable=True)
     disability_percentage = db.Column(db.Integer, nullable=True)
     disability_group = db.Column(db.String(100), nullable=True)
+    tc_hash = db.Column(db.String(64), unique=True, nullable=True)
+    report_expiry_date = db.Column(db.Date, nullable=True)
 
     # Rollerin geçerliliğini veri tabanı düzeyinde denetlemek için Check Constraint ekliyoruz
     __table_args__ = (
@@ -49,7 +51,8 @@ class User(db.Model):
             "is_verified": self.is_verified,
             "disability_summary": self.disability_summary,
             "disability_percentage": self.disability_percentage,
-            "disability_group": self.disability_group
+            "disability_group": self.disability_group,
+            "report_expiry_date": self.report_expiry_date.isoformat() if self.report_expiry_date else None
         }
 
     def __repr__(self):

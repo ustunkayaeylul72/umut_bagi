@@ -3,12 +3,37 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from dotenv import load_dotenv
+from flask_apscheduler import APScheduler
 
 # Çevre değişkenlerini yükle
 load_dotenv()
 
 # Küresel SQLAlchemy nesnesini tanımla
 db = SQLAlchemy()
+
+# Küresel Scheduler nesnesi
+scheduler = APScheduler()
+
+def check_expired_reports():
+    """Arka planda çalışarak süresi dolan raporların onayını kaldırır."""
+    from app.models.user import User
+    from datetime import date
+    from app import db
+    
+    # APScheduler görevleri kendi thread'inde çalıştığı için Flask app_context gerektirir
+    with scheduler.app.app_context():
+        expired_users = User.query.filter(
+            User.is_verified == True, 
+            User.report_expiry_date != None, 
+            User.report_expiry_date < date.today()
+        ).all()
+        
+        for u in expired_users:
+            u.is_verified = False
+            
+        if expired_users:
+            db.session.commit()
+            print(f">>> [Arka Plan] {len(expired_users)} kullanıcının rapor süresi dolduğu için onayları kaldırıldı.")
 
 def create_app(test_config=None):
     """
@@ -44,5 +69,12 @@ def create_app(test_config=None):
     # Blueprint'leri uygulamaya kaydet
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(pages_bp)
+    
+    # Scheduler Yapılandırması ve Başlatılması
+    app.config['SCHEDULER_API_ENABLED'] = True
+    if not scheduler.running:
+        scheduler.init_app(app)
+        scheduler.add_job(id='check_expired_reports_job', func=check_expired_reports, trigger='interval', minutes=1)
+        scheduler.start()
     
     return app
