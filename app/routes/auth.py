@@ -20,8 +20,8 @@ def register():
     if not name or not email or not role:
         return jsonify({"error": "Eksik parametre. 'name', 'email' ve 'role' zorunludur."}), 400
         
-    if role not in ['disabled', 'donor']:
-        return jsonify({"error": "Geçersiz rol. Rol 'disabled' veya 'donor' olmalıdır."}), 400
+    if role not in ['disabled', 'donor', 'admin']:
+        return jsonify({"error": "Geçersiz rol. Rol 'disabled', 'donor' veya 'admin' olmalıdır."}), 400
         
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Bu e-posta adresi zaten kullanımda."}), 400
@@ -32,7 +32,7 @@ def register():
             email=email,
             role=role,
             disability_summary=disability_summary if role == 'disabled' else None,
-            is_verified=False
+            is_verified=True if role == 'admin' else False
         )
         db.session.add(new_user)
         db.session.commit()

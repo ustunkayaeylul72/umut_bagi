@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('disabled', 'donor')),
+    role VARCHAR(50) NOT NULL CHECK (role IN ('disabled', 'donor', 'admin')),
     is_verified BOOLEAN DEFAULT 0 NOT NULL,
     disability_summary TEXT,
     disability_percentage INTEGER,

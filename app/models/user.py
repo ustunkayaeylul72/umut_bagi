@@ -20,7 +20,7 @@ class User(db.Model):
 
     # Rollerin geçerliliğini veri tabanı düzeyinde denetlemek için Check Constraint ekliyoruz
     __table_args__ = (
-        db.CheckConstraint("role IN ('disabled', 'donor')", name="check_user_role"),
+        db.CheckConstraint("role IN ('disabled', 'donor', 'admin')", name="check_user_role"),
     )
 
     # İlişkiler:
@@ -41,6 +41,19 @@ class User(db.Model):
         lazy=True
     )
 
+    def get_goodness_points(self):
+        """Bağışçıların tamamlanmış iyiliklerine göre dinamik puan hesaplar."""
+        if self.role != 'donor':
+            return 0
+        from app.models.listing import Listing
+        
+        # 1. Kendi açtığı bağış ilanının eşleşmiş olması
+        donations_matched = Listing.query.filter_by(created_by=self.id, listing_type='donation', status='matched').count()
+        # 2. Başkasının açtığı ihtiyaç ilanını üstlenmiş olması
+        needs_fulfilled = Listing.query.filter_by(matched_donor_id=self.id, listing_type='need', status='matched').count()
+        
+        return (donations_matched + needs_fulfilled) * 50
+
     def to_dict(self):
         """Model verilerini sözlük biçimine dönüştürür."""
         return {
@@ -52,7 +65,8 @@ class User(db.Model):
             "disability_summary": self.disability_summary,
             "disability_percentage": self.disability_percentage,
             "disability_group": self.disability_group,
-            "report_expiry_date": self.report_expiry_date.isoformat() if self.report_expiry_date else None
+            "report_expiry_date": self.report_expiry_date.isoformat() if self.report_expiry_date else None,
+            "goodness_points": self.get_goodness_points()
         }
 
     def __repr__(self):

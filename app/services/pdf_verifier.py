@@ -46,7 +46,7 @@ def compare_names(expected_name, extracted_name):
         
     return False
 
-def extract_and_verify_report(pdf_file_stream, expected_name):
+def _extract_and_verify_report_regex(pdf_file_stream, expected_name):
     """
     PDF dosyasını okur (OCR olmadan, salt pypdf ile).
     Sadece gerekli alanları Regex ile arayıp çıkarır.
@@ -169,12 +169,115 @@ def extract_and_verify_report(pdf_file_stream, expected_name):
              extracted_barcode = "DEMO-BARCODE-998877"
 
         # En son Doğrulama Kararı
-        # ÇÖZGER için yüzde zorunlu değil. Erişkin için yüzde zorunlu (demo hariç).
         if extracted_tc:
             if is_child_report or (not is_child_report and extracted_percentage is not None):
-                return True, "Rapor Başarıyla Doğrulandı (ÇÖZGER Kapsamı Dahil).", extracted_percentage, extracted_group, extracted_tc, expiry_date
+                return True, "Rapor Başarıyla Doğrulandı (Fallback Regex Motoru Kullanıldı).", extracted_percentage, extracted_group, extracted_tc, expiry_date
              
         return False, "Belgede zorunlu eksik bilgiler bulunuyor (T.C. veya Oran okunamadı).", None, None, None, None
 
     except Exception as e:
         return False, f"PDF dosyası okunurken teknik hata: {str(e)}", None, None, None, None
+
+def extract_and_verify_report(pdf_file_stream, expected_name):
+    """
+    Öncelikli olarak Google Gemini API kullanarak PDF'i mühür/imza OCR ve semantik analize sokar.
+    API anahtarı yoksa veya hata oluşursa eski _extract_and_verify_report_regex fonksiyonuna (Fallback) yönlenir.
+    """
+    import os
+    import json
+    import tempfile
+    
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key or api_key == "your_gemini_api_key_here":
+        print("INFO: Gemini API anahtarı bulunamadı, Regex sistemine geçiliyor...")
+        pdf_file_stream.seek(0)
+        return _extract_and_verify_report_regex(pdf_file_stream, expected_name)
+        
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        
+        # Dosyayı geçici olarak diske yaz (Gemini upload için fiziki dosya gerektirir)
+        pdf_file_stream.seek(0)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(pdf_file_stream.read())
+            tmp_path = tmp.name
+            
+        # PDF'i Gemini'ye yükle
+        uploaded_file = genai.upload_file(path=tmp_path, display_name="Engelli_Raporu")
+        
+        # Modeli başlat
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Yapay Zeka Komutu (System Prompt & NER Extraction)
+        prompt = f"""
+        Sen uzman bir tıbbi evrak doğrulama ve NER (Named Entity Recognition) asistanısın. 
+        Sana yüklenen belge bir "Engelli Sağlık Kurulu Raporu" veya "ÇÖZGER" olabilir.
+        Lütfen belgedeki metinleri, mühürleri ve imzaları dikkatlice inceleyerek aşağıdaki bilgileri çıkar.
+        Beklenen isim: "{expected_name}".
+        
+        Bana SADECE JSON formatında bir cevap dön. Markdown işaretleri (```json) kullanma, direkt JSON'ı ver.
+        Format şu şekilde olmalıdır:
+        {{
+            "tc_no": "Belgedeki 11 haneli T.C. Kimlik Numarası",
+            "extracted_name": "Belgedeki tam ad soyad",
+            "engel_orani": 45, 
+            "engel_grubu": "Görme, İşitme vb. (kısa özet)",
+            "gecerlilik_tarihi": "YYYY-MM-DD",
+            "sahte_mi": false
+        }}
+        
+        Notlar:
+        - engel_orani: Sadece sayı olmalı. ÇÖZGER için null olabilir.
+        - gecerlilik_tarihi: Süresiz ise null dön.
+        - sahte_mi: Eğer belge sağlık kurulu raporu değilse, isimler tamamen farklıysa veya üzerinde mühür/onay yok gibi duruyorsa true dön.
+        """
+        
+        response = model.generate_content([uploaded_file, prompt])
+        
+        # Geçici dosyaları temizle
+        try:
+            genai.delete_file(uploaded_file.name)
+            os.unlink(tmp_path)
+        except:
+            pass
+            
+        # Çıktıyı JSON olarak parse et
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text.replace("```json", "").replace("```", "").strip()
+        elif text.startswith("```"):
+            text = text.replace("```", "").strip()
+            
+        data = json.loads(text)
+        
+        # Yapay Zeka Kararlarını Doğrula
+        if data.get("sahte_mi") == True:
+             return False, "Yapay Zeka, belgenin geçerli bir engelli sağlık kurulu raporu olmadığını tespit etti.", None, None, None, None
+             
+        tc_no = data.get("tc_no")
+        ext_name = data.get("extracted_name")
+        engel_orani = data.get("engel_orani")
+        engel_grubu = data.get("engel_grubu", "Genel Engelli Üye")
+        gecerlilik_tarihi_str = data.get("gecerlilik_tarihi")
+        
+        if not compare_names(expected_name, ext_name):
+            return False, f"Yapay Zeka Analizi: Rapor üzerindeki isim ('{ext_name}') ile hesap sahibi ('{expected_name}') uyuşmuyor.", None, None, None, None
+            
+        if not tc_no or not check_tc_checksum(str(tc_no)):
+             return False, "Yapay Zeka Analizi: Belgede geçerli bir T.C. Kimlik Numarası tespit edilemedi.", None, None, None, None
+             
+        expiry_date = None
+        if gecerlilik_tarihi_str:
+            try:
+                from datetime import datetime
+                expiry_date = datetime.strptime(gecerlilik_tarihi_str, "%Y-%m-%d").date()
+            except Exception:
+                pass
+                
+        return True, "Rapor Yapay Zeka (Gemini Vision) tarafından mühür ve metin bütünlüğü kontrol edilerek başarıyla doğrulandı.", engel_orani, engel_grubu, str(tc_no), expiry_date
+
+    except Exception as e:
+        print(f"Gemini API Hatası: {str(e)} - Regex (Fallback) moduna geçiliyor.")
+        pdf_file_stream.seek(0)
+        return _extract_and_verify_report_regex(pdf_file_stream, expected_name)

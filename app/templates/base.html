@@ -31,6 +31,7 @@
             <ul class="nav-links" id="nav-links">
                 <li><a href="{{ url_for('pages.index') }}" class="nav-link"><i class="fa-solid fa-house"></i> Ana Sayfa</a></li>
                 <li><a href="{{ url_for('pages.listings_view') }}" class="nav-link"><i class="fa-solid fa-list-check"></i> İlanlar</a></li>
+                <li id="admin-nav-item" style="display: none;"><a href="{{ url_for('pages.admin_view') }}" class="nav-link"><i class="fa-solid fa-shield-halved"></i> Vakıf Yönetimi</a></li>
                 <li id="auth-nav-item">
                     <a href="{{ url_for('pages.auth_view') }}" class="btn btn-primary nav-btn"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</a>
                 </li>
@@ -83,6 +84,24 @@
         </div>
     </footer>
 
+    <!-- Erişilebilirlik (A11y) Menüsü -->
+    <div class="a11y-widget" id="a11y-widget">
+        <button class="a11y-toggle" id="a11y-toggle" aria-label="Erişilebilirlik Menüsünü Aç">
+            <i class="fa-solid fa-universal-access"></i>
+        </button>
+        <div class="a11y-menu" id="a11y-menu">
+            <div class="a11y-header">
+                Erişilebilirlik
+                <button id="a11y-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="a11y-body">
+                <button class="a11y-btn" id="a11y-text-increase"><i class="fa-solid fa-magnifying-glass-plus"></i> Metni Büyüt</button>
+                <button class="a11y-btn" id="a11y-text-decrease"><i class="fa-solid fa-magnifying-glass-minus"></i> Metni Küçült</button>
+                <button class="a11y-btn" id="a11y-contrast"><i class="fa-solid fa-circle-half-stroke"></i> Yüksek Kontrast</button>
+                <button class="a11y-btn" id="a11y-tts"><i class="fa-solid fa-volume-high"></i> Sesli Okuma (Kapalı)</button>
+            </div>
+        </div>
+    </div>
     <!-- Custom Client Logic -->
     <script src="{{ url_for('static', filename='js/main.js') }}?v=11.0"></script>
 </body>

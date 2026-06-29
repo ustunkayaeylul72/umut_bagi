@@ -822,3 +822,373 @@ a {
         gap: 2rem;
     }
 }
+
+/* =========================================
+   ERİŞİLEBİLİRLİK (A11Y) MODÜLÜ TASARIMLARI
+   ========================================= */
+
+/* High Contrast (Yüksek Kontrast) Modu Sınıfları */
+body.high-contrast {
+    --bg-dark: #000000;
+    --bg-surface: #111111;
+    --bg-glass: #000000;
+    --text-white: #ffff00;
+    --text-light: #ffffff;
+    --text-muted: #cccccc;
+    --primary: #ffff00;
+    --secondary: #00ffff;
+    --primary-hue: 60;
+    --border-glass: #ffff00;
+}
+
+body.high-contrast .btn-primary {
+    background: #ffff00;
+    color: #000000;
+    font-weight: 900;
+}
+
+body.high-contrast .navbar-container {
+    background-color: #000000;
+    border-bottom: 2px solid #ffff00;
+}
+
+body.high-contrast .card {
+    background: #000000;
+    border: 2px solid #ffff00;
+}
+
+body.high-contrast .card-description {
+    color: #ffffff;
+}
+
+/* Yüzen Erişilebilirlik Menüsü */
+.a11y-widget {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 9999;
+}
+
+.a11y-toggle {
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.a11y-toggle:hover {
+    transform: scale(1.1);
+}
+
+.a11y-menu {
+    position: absolute;
+    bottom: 75px;
+    left: 0;
+    width: 250px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    display: none; /* JS ile açılıp kapanacak */
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.a11y-menu.active {
+    display: flex;
+    animation: slideUpA11y 0.3s ease forwards;
+}
+
+.a11y-header {
+    background-color: var(--bg-dark);
+    padding: 1rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.a11y-header button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.a11y-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.a11y-btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-white);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: var(--transition);
+}
+
+.a11y-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Tasarım */
+@media (max-width: 968px) {
+    .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 3rem;
+        margin: 2rem auto;
+    }
+    
+    .hero-actions {
+        justify-content: center;
+    }
+    
+    .hero-visual {
+        order: -1;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+    
+    .nav-links {
+        position: fixed;
+        top: 70px;
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - 70px);
+        background-color: var(--bg-dark);
+        flex-direction: column;
+        padding: 3rem 2rem;
+        transition: var(--transition);
+        z-index: 999;
+        border-top: 1px solid var(--border-glass);
+    }
+    
+    .nav-links.active {
+        left: 0;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}
+
+/* =========================================
+   ERİŞİLEBİLİRLİK (A11Y) MODÜLÜ TASARIMLARI
+   ========================================= */
+
+/* High Contrast (Yüksek Kontrast) Modu Sınıfları */
+body.high-contrast {
+    --bg-dark: #000000;
+    --bg-surface: #111111;
+    --bg-glass: #000000;
+    --text-white: #ffff00;
+    --text-light: #ffffff;
+    --text-muted: #cccccc;
+    --primary: #ffff00;
+    --secondary: #00ffff;
+    --primary-hue: 60;
+    --border-glass: #ffff00;
+}
+
+body.high-contrast .btn-primary {
+    background: #ffff00;
+    color: #000000;
+    font-weight: 900;
+}
+
+body.high-contrast .navbar-container {
+    background-color: #000000;
+    border-bottom: 2px solid #ffff00;
+}
+
+body.high-contrast .card {
+    background: #000000;
+    border: 2px solid #ffff00;
+}
+
+body.high-contrast .card-description {
+    color: #ffffff;
+}
+
+/* Yüzen Erişilebilirlik Menüsü */
+.a11y-widget {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    z-index: 9999;
+}
+
+.a11y-toggle {
+    width: 60px;
+    height: 60px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.a11y-toggle:hover {
+    transform: scale(1.1);
+}
+
+.a11y-menu {
+    position: absolute;
+    bottom: 75px;
+    left: 0;
+    width: 250px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-glass);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    display: none; /* JS ile açılıp kapanacak */
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.a11y-menu.active {
+    display: flex;
+    animation: slideUpA11y 0.3s ease forwards;
+}
+
+.a11y-header {
+    background-color: var(--bg-dark);
+    padding: 1rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.a11y-header button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.a11y-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.a11y-btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-white);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: var(--transition);
+}
+
+.a11y-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.a11y-btn i {
+    font-size: 1.1rem;
+}
+
+@keyframes slideUpA11y {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   OYUNLAŞTIRMA (GAMIFICATION) TASARIMLARI
+   ========================================= */
+.badge-points {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+}
+.badge-points:hover {
+    transform: translateY(-2px);
+}
+.badge-start { 
+    background: #f1f5f9; 
+    color: #64748b; 
+    border: 1px solid #e2e8f0;
+}
+.badge-bronze { 
+    background: linear-gradient(135deg, #dfa980, #c87642); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(200, 118, 66, 0.4);
+}
+.badge-gold { 
+    background: linear-gradient(135deg, #ffd700, #ff8c00); 
+    color: white; 
+    box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5);
+    animation: pulse 2s infinite alternate; 
+}

@@ -99,6 +99,72 @@ def create_listing():
         db.session.rollback()
         return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
 
+@listings_bp.route('/admin/data', methods=['GET'])
+def get_admin_data():
+    """Admin dashboard için tüm kullanıcıları, ilanları ve istatistikleri döndürür."""
+    users = User.query.all()
+    listings = Listing.query.all()
+    
+    users_data = [u.to_dict() for u in users]
+    
+    listings_data = []
+    for l in listings:
+        ldict = l.to_dict()
+        ldict['creator_name'] = l.creator.name if l.creator else "Bilinmeyen Kullanıcı"
+        ldict['matched_donor_name'] = l.matched_donor.name if l.matched_donor else None
+        listings_data.append(ldict)
+        
+    stats = {
+        "total_users": len(users),
+        "total_disabled": sum(1 for u in users if u.role == 'disabled'),
+        "total_donors": sum(1 for u in users if u.role == 'donor'),
+        "total_listings": len(listings),
+        "matched_listings": sum(1 for l in listings if l.status == 'matched'),
+        "open_listings": sum(1 for l in listings if l.status == 'open')
+    }
+        
+    return jsonify({
+        "stats": stats,
+        "users": users_data,
+        "listings": listings_data
+    }), 200
+
+@listings_bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
+def admin_delete_user(user_id):
+    """Admin yetkisiyle bir kullanıcıyı kalıcı olarak siler."""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Kullanıcı bulunamadı."}), 404
+        
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": "Kullanıcı başarıyla silindi."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
+
+@listings_bp.route('/admin/listings/<int:listing_id>/reset', methods=['POST'])
+def admin_reset_listing(listing_id):
+    """Admin yetkisiyle bir ilanın eşleşmesini bozar ve tekrar 'open' (Açık) hale getirir."""
+    listing = Listing.query.get(listing_id)
+    if not listing:
+        return jsonify({"error": "İlan bulunamadı."}), 404
+        
+    try:
+        listing.status = 'open'
+        listing.matched_donor_id = None
+        if listing.listing_type == 'donation':
+            listing.claimer_name = None
+            listing.claimer_phone = None
+            listing.claimer_address = None
+            
+        db.session.commit()
+        return jsonify({"message": "İlan eşleşmesi başarıyla sıfırlandı."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
+
 @listings_bp.route('/<int:listing_id>/match', methods=['POST'])
 def match_listing(listing_id):
     """Bir ilanı bir donör ile eşleştirir (Yalnızca 'donor' rolündeki kullanıcılar)."""
@@ -144,9 +210,10 @@ def match_listing(listing_id):
         db.session.commit()
         
         msg = "İlan başarıyla adınıza rezerve edildi." if listing.listing_type == 'donation' else "İhtiyaç ilanını başarıyla üstlendiniz, dayanışmanız için teşekkür ederiz."
-        
+        import random
         return jsonify({
             "message": msg,
+            "cargo_code": f"PTT-UMT-{random.randint(1000, 9999)}",
             "listing": listing.to_dict()
         }), 200
     except Exception as e:

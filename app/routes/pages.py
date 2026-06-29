@@ -16,3 +16,8 @@ def listings_view():
 def auth_view():
     """Giriş Yap / Kayıt Ol arayüzünü (auth.html) döndürür."""
     return render_template('auth.html')
+
+@pages_bp.route('/admin')
+def admin_view():
+    """Vakıf Yönetim Paneli (admin.html) arayüzünü döndürür."""
+    return render_template('admin.html')

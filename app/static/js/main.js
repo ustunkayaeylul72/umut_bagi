@@ -71,9 +71,11 @@ function updateAuthUI() {
     const user = getLoggedInUser();
     const authNavItem = document.getElementById("auth-nav-item");
     const userNavItem = document.getElementById("user-nav-item");
+    const adminNavItem = document.getElementById("admin-nav-item");
     
     if (user) {
         if (authNavItem) authNavItem.style.display = "none";
+        if (adminNavItem && user.role === 'admin') adminNavItem.style.display = "block";
         if (userNavItem) {
             userNavItem.style.display = "flex";
             const usernameEl = document.getElementById("nav-username");
@@ -82,18 +84,45 @@ function updateAuthUI() {
             
             if (usernameEl) usernameEl.textContent = user.name;
             if (roleEl) {
-                roleEl.textContent = user.role === "disabled" ? "Engelli" : "Bağışçı";
+                if (user.role === "admin") {
+                    roleEl.textContent = "YÖNETİCİ";
+                } else {
+                    roleEl.textContent = user.role === "disabled" ? "İhtiyaç Sahibi" : "Bağışçı";
+                }
                 roleEl.className = `badge badge-${user.role}`;
                 
-                // Eski onay rozetini temizle ve varsa yeniden ekle
+                // Eski onay ve puan rozetlerini temizle
                 const oldVerified = userInfoContainer.querySelector(".badge-verified");
                 if (oldVerified) oldVerified.remove();
+                
+                const oldPoints = userInfoContainer.querySelector(".badge-points");
+                if (oldPoints) oldPoints.remove();
                 
                 if (user.is_verified) {
                     const verifiedBadge = document.createElement("span");
                     verifiedBadge.className = "badge-verified";
                     verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Onaylı';
                     userInfoContainer.appendChild(verifiedBadge);
+                }
+                
+                // Oyunlaştırma (Gamification) - İyilik Puanı Sadece Bağışçılara
+                if (user.role === 'donor') {
+                    const pts = user.goodness_points || 0;
+                    let badgeClass = "badge-start";
+                    let badgeName = "İyilik Başlangıcı";
+                    
+                    if (pts >= 150) { 
+                        badgeClass = "badge-gold"; 
+                        badgeName = "İyilik Meleği"; 
+                    } else if (pts >= 50) { 
+                        badgeClass = "badge-bronze"; 
+                        badgeName = "Umut Elçisi"; 
+                    }
+                    
+                    const pointsBadge = document.createElement("span");
+                    pointsBadge.className = `badge-points ${badgeClass}`;
+                    pointsBadge.innerHTML = `<i class="fa-solid fa-star"></i> ${pts} Puan - ${badgeName}`;
+                    userInfoContainer.appendChild(pointsBadge);
                 }
             }
             // Eğer kullanıcı bağışçıysa, "Diğer İlanlar" butonunun adını "Umut Bekleyenler" olarak değiştir.
@@ -580,9 +609,14 @@ async function submitMatchRequest(listingId, payload, isNeedMatch = false, newTa
         if (response.ok) {
             showToast(data.message || "Eşleşme başarıyla tamamlandı.");
             loadListings();
+            
+            if (data.cargo_code) {
+                alert(`EŞLEŞME BAŞARILI!\n\nLojistik Kargo Kodunuz: ${data.cargo_code}\nLütfen en yakın PTT şubesine bu kod ile eşyayı teslim ediniz.\nUmut Bağı'na desteğiniz için teşekkürler!`);
+            }
+            
             if (isNeedMatch && newTab) {
                 newTab.location.href = "https://share.google/C4ums0PGjIeNKsIjL";
-            } else if (!isNeedMatch) {
+            } else if (!isNeedMatch && !data.cargo_code) {
                 // Elindekini bağışla denildiyse belirgin bir uyarı ver.
                 const listing = allListings.find(l => l.id === listingId);
                 if (listing) {
@@ -1058,4 +1092,100 @@ document.addEventListener("DOMContentLoaded", () => {
             loadListings(true);
         }
     }, 5000);
+});
+
+// =========================================
+// ERİŞİLEBİLİRLİK (A11Y) MODÜLÜ MANTIĞI
+// =========================================
+document.addEventListener("DOMContentLoaded", () => {
+    const a11yToggle = document.getElementById("a11y-toggle");
+    const a11yMenu = document.getElementById("a11y-menu");
+    const a11yClose = document.getElementById("a11y-close");
+    
+    const btnIncrease = document.getElementById("a11y-text-increase");
+    const btnDecrease = document.getElementById("a11y-text-decrease");
+    const btnContrast = document.getElementById("a11y-contrast");
+    const btnTts = document.getElementById("a11y-tts");
+    
+    let currentFontSize = 100;
+    let isTtsActive = false;
+    let ttsHandler = null;
+
+    if (!a11yToggle) return;
+
+    // Menü Aç/Kapat
+    a11yToggle.addEventListener("click", () => {
+        a11yMenu.classList.toggle("active");
+    });
+    
+    a11yClose.addEventListener("click", () => {
+        a11yMenu.classList.remove("active");
+    });
+
+    // 1. Metin Boyutu Değiştirme
+    btnIncrease.addEventListener("click", () => {
+        if (currentFontSize < 150) {
+            currentFontSize += 10;
+            document.documentElement.style.fontSize = currentFontSize + "%";
+        }
+    });
+
+    btnDecrease.addEventListener("click", () => {
+        if (currentFontSize > 80) {
+            currentFontSize -= 10;
+            document.documentElement.style.fontSize = currentFontSize + "%";
+        }
+    });
+
+    // 2. Yüksek Kontrast (Dark Mode / High Contrast)
+    btnContrast.addEventListener("click", () => {
+        document.body.classList.toggle("high-contrast");
+        const isActive = document.body.classList.contains("high-contrast");
+        localStorage.setItem("highContrast", isActive);
+    });
+    
+    // Sayfa yüklendiğinde eski kontrast tercihini hatırla
+    if (localStorage.getItem("highContrast") === "true") {
+        document.body.classList.add("high-contrast");
+    }
+
+    // 3. Sesli Okuma (Text-to-Speech)
+    btnTts.addEventListener("click", () => {
+        isTtsActive = !isTtsActive;
+        btnTts.innerHTML = isTtsActive ? 
+            '<i class="fa-solid fa-volume-high"></i> Sesli Okuma (Açık)' : 
+            '<i class="fa-solid fa-volume-xmark"></i> Sesli Okuma (Kapalı)';
+            
+        if (isTtsActive) {
+            btnTts.style.backgroundColor = "var(--primary)";
+            btnTts.style.color = "white";
+            showToast("Sesli asistan aktif. Okunmasını istediğiniz metnin üzerine fare ile gelin.", "success");
+            
+            // Hover olayını başlat
+            ttsHandler = (e) => {
+                // Sadece metin içeren ana elementleri oku (P, H1-H6, SPAN, A, BUTTON, vb)
+                const tagsToRead = ['P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'SPAN', 'A', 'BUTTON', 'LI', 'TD'];
+                if (tagsToRead.includes(e.target.tagName)) {
+                    const textToRead = e.target.innerText || e.target.textContent;
+                    if (textToRead && textToRead.trim().length > 0) {
+                        window.speechSynthesis.cancel(); // Önceki okumayı durdur
+                        const utterance = new SpeechSynthesisUtterance(textToRead.trim());
+                        utterance.lang = 'tr-TR';
+                        utterance.rate = 1.0;
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
+            };
+            document.addEventListener('mouseover', ttsHandler);
+            
+        } else {
+            btnTts.style.backgroundColor = "";
+            btnTts.style.color = "";
+            window.speechSynthesis.cancel();
+            if (ttsHandler) {
+                document.removeEventListener('mouseover', ttsHandler);
+            }
+            showToast("Sesli asistan kapatıldı.");
+        }
+    });
 });
