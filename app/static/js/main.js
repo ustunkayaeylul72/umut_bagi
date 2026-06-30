@@ -1189,3 +1189,35 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+// ==========================================
+// CİMER/JÜRİ TEK TIKLA DEMO GİRİŞİ (QUICK LOGIN)
+// ==========================================
+async function demoLogin(role) {
+    try {
+        const response = await fetch('/api/auth/demo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: role })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem("user", JSON.stringify(data.user));
+            alert(`✅ ${data.user.name} olarak sisteme başarılı bir şekilde giriş yapıldı!`);
+            
+            // Yönlendirme
+            if (role === 'admin') {
+                window.location.href = '/admin';
+            } else {
+                window.location.href = '/';
+            }
+        } else {
+            alert(`Hata: ${data.error}`);
+        }
+    } catch (err) {
+        console.error("Demo giriş hatası:", err);
+        alert("Bağlantı hatası oluştu, sunucu çalışıyor mu?");
+    }
+}

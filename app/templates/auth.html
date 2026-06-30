@@ -6,6 +6,25 @@
 <div class="auth-wrapper">
     <div class="auth-container">
         <!-- Tab Menüsü -->
+        <!-- Tek Tıkla Demo (CİMER/Jüri) Bölümü -->
+        <div class="demo-login-section" style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(0,255,255,0.05); border: 1px solid var(--border-glass); border-radius: 12px; text-align: center;">
+            <h3 style="margin-bottom: 1rem; color: var(--primary); font-size: 1.2rem;">
+                <i class="fa-solid fa-bolt"></i> Tek Tıkla İnceleme (CİMER / Jüri)
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem;">Kayıt olmadan sistemi anında test etmek için bir rol seçin:</p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <button onclick="demoLogin('admin')" class="btn btn-outline" style="flex: 1; min-width: 140px; border-color: var(--primary); color: var(--text-light);">
+                    <i class="fa-solid fa-shield-halved"></i> Yönetici
+                </button>
+                <button onclick="demoLogin('donor')" class="btn btn-outline" style="flex: 1; min-width: 140px; border-color: var(--primary); color: var(--text-light);">
+                    <i class="fa-solid fa-hand-holding-heart"></i> Bağışçı
+                </button>
+                <button onclick="demoLogin('disabled')" class="btn btn-outline" style="flex: 1; min-width: 140px; border-color: var(--primary); color: var(--text-light);">
+                    <i class="fa-solid fa-wheelchair"></i> İhtiyaç Sahibi
+                </button>
+            </div>
+        </div>
+
         <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login">Giriş Yap</button>
             <button class="auth-tab" id="tab-register">Kayıt Ol</button>

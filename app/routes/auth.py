@@ -63,6 +63,39 @@ def login():
         "user": user.to_dict()
     }), 200
 
+@auth_bp.route('/demo', methods=['POST'])
+def demo_login():
+    """CİMER/Jüri için tek tıkla otomatik demo girişi sağlar."""
+    data = request.get_json() or {}
+    role = data.get('role')
+
+    if role not in ['admin', 'donor', 'disabled']:
+        return jsonify({"error": "Geçersiz rol."}), 400
+
+    email = f"demo_{role}@cimer.gov.tr"
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Demo kullanıcısı yoksa otomatik oluştur
+        name_map = {
+            'admin': 'CİMER Yöneticisi',
+            'donor': 'Örnek Bağışçı',
+            'disabled': 'Örnek İhtiyaç Sahibi'
+        }
+        user = User(
+            name=name_map[role],
+            email=email,
+            role=role,
+            is_verified=True,
+            disability_summary="Örnek e-Devlet sağlık kurulu raporu özetidir." if role == 'disabled' else None,
+            disability_percentage=60 if role == 'disabled' else None,
+            disability_group="Ortopedik" if role == 'disabled' else None
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    return jsonify({"message": "Demo girişi başarılı.", "user": user.to_dict()}), 200
+
 @auth_bp.route('/verify-report', methods=['POST'])
 def verify_report():
     """
