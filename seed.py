@@ -42,12 +42,12 @@ with app.app_context():
 
     # İlanlar
     if Listing.query.count() < 3:
-        l1 = Listing(title='Akülü Tekerlekli Sandalye', description='İhtiyaç fazlası, temiz kullanılmış akülü tekerlekli sandalye.', category='Medikal', status='open', listing_type='donation', created_by=u_donor1.id)
-        l2 = Listing(title='Braille Alfabesi Kitap Seti', description='Eğitimime devam edebilmek için Braille kitap setine ihtiyacım var.', category='Eğitim', status='open', listing_type='need', created_by=u_disabled1.id)
-        l3 = Listing(title='İşitme Cihazı Pili', description='Kullanmadığım işitme cihazı pillerini bağışlamak istiyorum.', category='Medikal', status='open', listing_type='donation', created_by=u_donor2.id)
+        l1 = Listing(title='Akülü Tekerlekli Sandalye', description='İhtiyaç fazlası, temiz kullanılmış akülü tekerlekli sandalye.', category='Medikal', status='open', listing_type='donation', created_by=u_donor1.id, image_url='https://images.unsplash.com/photo-1598007559139-44754a6b24a3?auto=format&fit=crop&q=80&w=800')
+        l2 = Listing(title='Braille Alfabesi Kitap Seti', description='Eğitimime devam edebilmek için Braille kitap setine ihtiyacım var.', category='Eğitim', status='open', listing_type='need', created_by=u_disabled1.id, image_url='https://images.unsplash.com/photo-1505682634904-d7c8d95cdc50?auto=format&fit=crop&q=80&w=800')
+        l3 = Listing(title='İşitme Cihazı Pili', description='Kullanmadığım işitme cihazı pillerini bağışlamak istiyorum.', category='Medikal', status='open', listing_type='donation', created_by=u_donor2.id, image_url='https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&q=80&w=800')
         
         # Eşleşmiş bir ilan örneği (Oyunlaştırma Puanı için)
-        l4 = Listing(title='Konuşan Saat', description='Görme engelliler için konuşan saat bağışı.', category='Teknoloji', status='matched', listing_type='donation', created_by=u_donor1.id, matched_donor_id=u_disabled1.id)
+        l4 = Listing(title='Konuşan Saat', description='Görme engelliler için konuşan saat bağışı.', category='Teknoloji', status='matched', listing_type='donation', created_by=u_donor1.id, matched_donor_id=u_disabled1.id, image_url='https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&q=80&w=800')
 
         db.session.add_all([l1, l2, l3, l4])
         db.session.commit()
