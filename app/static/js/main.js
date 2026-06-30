@@ -420,10 +420,12 @@ function displayListings(listings) {
             </div>`;
         }
 
-        // Resim varsa
-        let imageMarkup = "";
+        let imageMarkup = `<div class="h-48 bg-gray-100 flex items-center justify-center text-gray-400">
+            <i class="fa-solid fa-image text-4xl opacity-50"></i>
+        </div>`;
         if (l.image_url) {
-            imageMarkup = `<img src="/static/${l.image_url}" alt="İlan Görseli" class="w-full h-48 object-cover border-b border-gray-100">`;
+            let src = l.image_url.startsWith('http') ? l.image_url : `/static/${l.image_url}`;
+            imageMarkup = `<img src="${src}" alt="İlan Görseli" class="w-full h-48 object-cover border-b border-gray-100">`;
         }
 
         let cardBorderColor = l.listing_type === 'need' ? 'border-orange-200' : 'border-gray-100';
