@@ -144,6 +144,21 @@ def admin_delete_user(user_id):
         db.session.rollback()
         return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
 
+@listings_bp.route('/admin/users/<int:user_id>/verify', methods=['POST'])
+def admin_verify_user(user_id):
+    """Admin yetkisiyle bir kullanıcının raporunu manuel olarak onaylar."""
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "Kullanıcı bulunamadı."}), 404
+        
+    try:
+        user.is_verified = True
+        db.session.commit()
+        return jsonify({"message": "Kullanıcı başarıyla onaylandı."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
+
 @listings_bp.route('/admin/listings/<int:listing_id>/reset', methods=['POST'])
 def admin_reset_listing(listing_id):
     """Admin yetkisiyle bir ilanın eşleşmesini bozar ve tekrar 'open' (Açık) hale getirir."""
@@ -154,13 +169,30 @@ def admin_reset_listing(listing_id):
     try:
         listing.status = 'open'
         listing.matched_donor_id = None
+        
+        # Eğer bağış ilanıysa ve bir engelli talep ettiyse iletişim bilgilerini temizle
         if listing.listing_type == 'donation':
             listing.claimer_name = None
             listing.claimer_phone = None
             listing.claimer_address = None
             
         db.session.commit()
-        return jsonify({"message": "İlan eşleşmesi başarıyla sıfırlandı."}), 200
+        return jsonify({"message": "Eşleşme başarıyla bozuldu ve ilan tekrar açıldı."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
+
+@listings_bp.route('/admin/listings/<int:listing_id>', methods=['DELETE'])
+def admin_delete_listing(listing_id):
+    """Admin yetkisiyle sistemdeki herhangi bir ilanı kalıcı olarak siler."""
+    listing = Listing.query.get(listing_id)
+    if not listing:
+        return jsonify({"error": "İlan bulunamadı."}), 404
+        
+    try:
+        db.session.delete(listing)
+        db.session.commit()
+        return jsonify({"message": "İlan sistemden tamamen kaldırıldı."}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Bir hata oluştu: {str(e)}"}), 500
