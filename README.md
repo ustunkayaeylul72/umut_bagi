@@ -4,9 +4,26 @@ Umut Bağı, engelli bireyler ile destek olmak isteyen donörleri bir araya geti
 
 ---
 
-## Mimari Seçim ve Teknik Gerekçeler
+## 📌 Proje Durumu ve Tamamlanan Aşamalar (İlerleme Raporu)
 
-Projemizde **Seçenek 1: Monolitik Mimari (Tümleşik Yapı)** tercih edilmiş ve bu doğrultuda kurumsal standartlara uygun klasör yapısı kurulmuştur.
+Proje şu anda **çalışır durumda (MVP - Minimum Viable Product)** seviyesindedir. Temel mimari, veritabanı, yapay zeka/PDF destekli rapor doğrulama ve kullanıcı arayüzü tamamlanmıştır.
+
+| Modül / Özellik | Durum | Açıklama |
+| :--- | :---: | :--- |
+| **Backend & REST API (Flask)** | ✅ Tamamlandı | Application Factory deseni, Blueprint modülleri (`auth.py`, `main.py`, `pages.py`). |
+| **Veritabanı & ORM (SQLite / SQLAlchemy)** | ✅ Tamamlandı | Kullanıcı, İlan ve Kategori ilişkileri, test verisi yükleme aracı (`seed.py`). |
+| **Akıllı e-Rapor / PDF Doğrulama** | ✅ Tamamlandı | Engelli sağlık raporu barkod analizi ve KVKK uyumlu bellek içi doğrulama. |
+| **İlan Yönetimi & Görsel Desteği** | ✅ Tamamlandı | Kategori bazlı listeleme, filtreleme, ilan oluşturma ve görsel yönetimi. |
+| **Erişilebilir Web Arayüzü (Frontend)** | ✅ Tamamlandı | Responsive, cam efektli (glassmorphism) erişilebilir arayüz tasarımı. |
+| **Doğrulama ve Test Betikleri** | ✅ Tamamlandı | `verify_app.py` ve `verify_pdf_feature.py` ile otomatik testler. |
+| **Docker & Cloud Run Desteği** | ✅ Tamamlandı | Dağıtıma hazır Dockerfile yapılandırması. |
+| **Canlı Kargo / Lojistik Takibi** | ⏳ *Planlanıyor* | Bir sonraki aşamada entegre edilecek. |
+
+---
+
+## 🛠️ Mimari Seçim ve Teknik Gerekçeler
+
+Projemizde **Monolitik Mimari (Tümleşik Yapı)** tercih edilmiş ve bu doğrultuda kurumsal standartlara uygun klasör yapısı kurulmuştur.
 
 ### Mimari Tercih Gerekçeleri:
 1. **Geliştirme ve Dağıtım Kolaylığı:** Projenin hızlı bir şekilde hayata geçirilmesi ve tek bir Docker konteyneri ile Google Cloud Run üzerinde kolayca host edilebilmesi için monolitik yapı en efektif çözümdür.
@@ -15,9 +32,9 @@ Projemizde **Seçenek 1: Monolitik Mimari (Tümleşik Yapı)** tercih edilmiş v
 
 ---
 
-## Teknoloji Yığını (Tech Stack)
+## 💻 Teknoloji Yığını (Tech Stack)
 
-- **Frontend:** Vanilla HTML5, premium cam efekti barındıran modern Vanilla CSS, Vanilla JavaScript (XSS korumalı, harici kitaplık bağımlılığı minimum).
+- **Frontend:** Vanilla HTML5, modern cam efektli (Glassmorphism) Vanilla CSS, Vanilla JavaScript (XSS korumalı, harici bağımlılık minimum).
 - **Backend:** Python 3.9 (Flask Framework - Application Factory Pattern).
 - **Veri Tabanı:** SQLite (Lokal testler için) / PostgreSQL uyumlu SQL yapısı (SQLAlchemy ORM).
 - **Güvenlik Protokolü:** Flask-CORS (Cross-Origin Resource Sharing) yapılandırması.
@@ -25,7 +42,7 @@ Projemizde **Seçenek 1: Monolitik Mimari (Tümleşik Yapı)** tercih edilmiş v
 
 ---
 
-## Güvenlik ve KVKK / GDPR Uyumluluğu
+## 🔒 Güvenlik ve KVKK / GDPR Uyumluluğu
 
 Sağlık Bakanlığı ve e-Devlet entegrasyonu simülasyonumuzda **KVKK kurallarına sıfır toleransla** uyulmaktadır:
 - Yüklenen engelli e-Rapor PDF'leri RAM üzerinde anlık okunur.
@@ -34,7 +51,7 @@ Sağlık Bakanlığı ve e-Devlet entegrasyonu simülasyonumuzda **KVKK kurallar
 
 ---
 
-## Proje Klasör Yapısı
+## 📂 Proje Klasör Yapısı
 
 ```text
 📁 umut_bagi/
@@ -62,24 +79,26 @@ Sağlık Bakanlığı ve e-Devlet entegrasyonu simülasyonumuzda **KVKK kurallar
 ├── 📄 .env.example                   # Çevre değişkeni şablonu
 ├── 📄 schema.sql                     # Boş veritabanı şeması
 ├── 📄 seed.sql                       # Jüri için hazır test verileri
+├── 📄 seed.py                        # Örnek ilanları görselleriyle oluşturan betik
+├── 📄 verify_app.py                  # API ve uygulama doğrulama testi
+├── 📄 verify_pdf_feature.py          # PDF doğrulama testi
 ├── 📄 run_app.py                     # Lokal çalıştırma betiği
 └── 📄 README.md                      # Proje dokümantasyonu
 ```
 
 ---
 
-## Kurulum ve Lokal Çalıştırma
+## 🚀 Kurulum ve Lokal Çalıştırma
 
 ### 1. Bağımlılıkların Kurulması
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Veri Tabanını İlklendirme
-Sistem ilk çalıştırıldığında `umut_bagi.db` dosyasını otomatik oluşturacak ve tabloları kuracaktır. Jüri testleri için örnek verileri yüklemek isterseniz SQLite aracı ile `seed.sql` dosyasını çalıştırabilirsiniz:
+### 2. Veritabanını ve Örnek Verileri Hazırlama
+Sistem ilk çalıştırıldığında veritabanını otomatik oluşturur. Jüri/hoca testi için hazır görselli örnek ilanları yüklemek için:
 ```bash
-sqlite3 umut_bagi.db < schema.sql
-sqlite3 umut_bagi.db < seed.sql
+python seed.py
 ```
 
 ### 3. Uygulamayı Başlatma
@@ -87,3 +106,12 @@ sqlite3 umut_bagi.db < seed.sql
 python run_app.py
 ```
 Uygulama lokalde `http://127.0.0.1:5000` adresinde çalışacaktır.
+
+---
+
+## 📝 Testler ve Doğrulama
+Uygulamanın tüm servislerini ve PDF rapor doğrulama mekanizmasını otomatik test etmek için:
+```bash
+python verify_app.py
+python verify_pdf_feature.py
+```
